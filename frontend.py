@@ -477,6 +477,9 @@ elif page == "Upload & Extract":
 
     col1, col2 = st.columns([1.1, 0.9])
 
+
+    
+
     with col1:
         uploaded_file = st.file_uploader("Drop invoice here", type=["pdf","png","jpg","jpeg"])
         if uploaded_file:
