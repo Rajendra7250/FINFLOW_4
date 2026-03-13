@@ -192,7 +192,7 @@ page = st.session_state.page
 # DASHBOARD
 # ════════════════════════════════════════════════
 if page == "Dashboard":
-    st.markdown('<div class="finflow-logo" style="font-size:2rem;margin-bottom:0.2rem;">FinFlow</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header" style="font-size:2rem;margin-bottom:0.2rem;">📊 Dashboard</div>', unsafe_allow_html=True)
     st.markdown('<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem;">GST Sales & Purchase Register</p>', unsafe_allow_html=True)
 
     tx = get_tax_summary()
