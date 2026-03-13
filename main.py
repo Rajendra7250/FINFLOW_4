@@ -9,6 +9,14 @@ st.set_page_config(page_title="FinFlow", page_icon="💳")
 COLS = ["ID","Date","Vendor","GSTIN","Category","Subtotal","CGST","SGST","IGST","Total"]
 CATS = ["Raw Materials","Office Supplies","IT & Software","Travel","Utilities","Rent","Marketing","Miscellaneous"]
 
+def init():
+    defaults = {"preg": pd.DataFrame(columns=COLS), "sreg": pd.DataFrame(columns=COLS), "n": 1, "ext": None}
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+            #loop acts like tempoarary storage to ensure our page doesnt resets
+init()
+
 def summary():
     p, s = st.session_state.preg, st.session_state.sreg
     def sums(df):
@@ -20,26 +28,80 @@ def summary():
                 nc=round(sc-pc,2), ns=round(ss-ps,2), ni=round(si-pi,2),
                 net=round((sc+ss+si)-(pc+ps+pi),2), pn=len(p), sn=len(s))
 
-def init():
-    defaults = {"preg": pd.DataFrame(columns=COLS), "sreg": pd.DataFrame(columns=COLS), "n": 1, "ext": None}
-    for k, v in defaults.items():
-        if k not in st.session_state:
-            st.session_state[k] = v
-            #loop acts like tempoarary storage to ensure our page doesnt resets
-init()
+
 # ── Sidebar ──
 with st.sidebar:
     st.title("💳 FinFlow")
     st.caption("GST Purchase & Sales Register")
     st.divider()
-    page = st.radio("Navigate", ["Dashboard", "Upload & Extract", "Manual Entry",
-                                  "Purchase Register", "Sales Register", "Reconciliation"],
-                    label_visibility="collapsed")
+
+    page = st.radio(
+        "Navigate",
+        [
+            "Guide",
+            "Upload & Extract",
+            "Dashboard",
+            "Manual Entry",
+            "Purchase Register",
+            "Sales Register",
+            "Reconciliation"
+        ],
+        label_visibility="collapsed"
+    )
+
     st.divider()
+
     t = summary()
     st.metric("Purchases", t["pn"])
     st.metric("Sales", t["sn"])
     st.metric("Net Tax", f"₹{t['net']:,.0f}")
+
+if page == "Guide":
+
+    st.title("📘 FinFlow User Guide")
+
+    st.header("1️⃣ Upload & Extract")
+    st.write("""
+    Upload invoice or receipt images.  
+    FinFlow will automatically extract:
+    - Vendor Name
+    - GSTIN
+    - Tax Amounts
+    - Total Value
+    """)
+
+    st.header("2️⃣ Manual Entry")
+    st.write("""
+    If OCR fails or you want to add records manually,
+    use the manual entry form to input invoice details.
+    """)
+
+    st.header("3️⃣ Dashboard")
+    st.write("""
+    View overall financial summary including:
+    - Total Purchases
+    - Total Sales
+    - Net GST payable
+    """)
+
+    st.header("4️⃣ Purchase Register")
+    st.write("""
+    Displays all purchase transactions with GST details.
+    Useful for GST input credit tracking.
+    """)
+
+    st.header("5️⃣ Sales Register")
+    st.write("""
+    Displays all sales invoices and GST collected.
+    """)
+
+    st.header("6️⃣ Reconciliation")
+    st.write("""
+    Helps match purchase and sales GST data
+    to identify mismatches or missing entries.
+    """)
+
+    st.success("Tip: Upload invoices regularly to keep your GST records updated.")
 
 # ── Dashboard ──
 if page == "Dashboard":
@@ -53,13 +115,15 @@ if page == "Dashboard":
     st.divider()
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("GST Breakdown")
-        st.dataframe(pd.DataFrame({
-            "Tax": ["CGST", "SGST", "IGST", "TOTAL"],
-            "Purchase": [f"₹{t['pc']:,.2f}", f"₹{t['ps']:,.2f}", f"₹{t['pi']:,.2f}", f"₹{t['pc']+t['ps']+t['pi']:,.2f}"],
-            "Sales":    [f"₹{t['sc']:,.2f}", f"₹{t['ss']:,.2f}", f"₹{t['si']:,.2f}", f"₹{t['sc']+t['ss']+t['si']:,.2f}"],
-            "Net":      [f"₹{t['nc']:,.2f}", f"₹{t['ns']:,.2f}", f"₹{t['ni']:,.2f}", f"₹{t['net']:,.2f}"],
-        }), hide_index=True, use_container_width=True)
+        st.subheader("Tax Distribution")
+        tax_data = pd.DataFrame({
+            "Tax Type": ["CGST","SGST","IGST"],
+            "Purchases": [t["pc"], t["ps"], t["pi"]],
+            "Sales": [t["sc"], t["ss"], t["si"]]
+        })
+        tax_data.set_index("Tax Type", inplace=True)
+        st.bar_chart(tax_data, use_container_width=True)
+   
     with col2:
         st.subheader("Sales vs Purchases")
         st.bar_chart(pd.DataFrame({"Amount": [t["pt"], t["st"]]}, index=["Purchases", "Sales"]))
