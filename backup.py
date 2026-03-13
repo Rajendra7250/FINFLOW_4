@@ -146,7 +146,6 @@ def parse_invoice_text(text: str) -> dict:
         "subtotal": subtotal, "cgst": cgst, "sgst": sgst, "igst": igst,
         "total": total, "category": category, "confidence": confidence,
     }
-
 # ── HELPERS ──
 def make_id(prefix):
     return f"{prefix}-{datetime.now().strftime('%y%m%d')}-{st.session_state.counter:04d}"
@@ -276,3 +275,4 @@ def build_gstr2a_2b(purchase_df, gstr2a_df):
             "ITC Claimable": "Yes" if status == "✅ Matched" else "No",
         })
     return gstr2a_df, gstr2b, pd.DataFrame(recon_rows)
+

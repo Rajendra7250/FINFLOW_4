@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import re
 from datetime import datetime, date
-from side import *
+from backend import *
 
 st.set_page_config(
     page_title="FinFlow · GST Register",
@@ -108,12 +108,14 @@ def init_state():
         "extracted": None,
         "inv_type_detected": "Purchase Invoice",
         "gstr2a_data": pd.DataFrame(columns=["GSTIN","Vendor","InvoiceNo","Date","Taxable","CGST","SGST","IGST","Total","Source"]),
+        "lang": "English",
     }
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
 
 init_state()
+
 
 # ── SIDEBAR ──
 with st.sidebar:
@@ -125,8 +127,26 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     st.markdown("---")
 
+    # Language toggle
+    lang = st.selectbox("🌐 Language / ಭಾಷೆ", ["English", "ಕನ್ನಡ"],
+                        index=0 if st.session_state.lang == "English" else 1,
+                        key="lang_select")
+    st.session_state.lang = lang
+    st.markdown("---")
+
+    KN = {
+        "Dashboard": "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
+        "Upload & Extract": "ಅಪ್‌ಲೋಡ್ & ಓದು",
+        "Manual Entry": "ಕೈಯಾರೆ ನಮೂದು",
+        "Purchase Register": "ಖರೀದಿ ನೋಂದಣಿ",
+        "Sales Register": "ಮಾರಾಟ ನೋಂದಣಿ",
+        "Reconciliation": "ತೆರಿಗೆ ಲೆಕ್ಕ",
+        "GSTR-1 Report": "GSTR-1 ವರದಿ",
+        "GSTR-3B Report": "GSTR-3B ವರದಿ",
+        "GSTR-2A / 2B": "GSTR-2A / 2B",
+        "User Guide": "ಬಳಕೆದಾರ ಮಾರ್ಗದರ್ಶಿ",
+    }
     pages = [
-        ("📘","Guide"),
         ("📊","Dashboard"),
         ("📤","Upload & Extract"),
         ("✏️","Manual Entry"),
@@ -136,10 +156,11 @@ with st.sidebar:
         ("📄","GSTR-1 Report"),
         ("📑","GSTR-3B Report"),
         ("🔍","GSTR-2A / 2B"),
-        ("⚙️","Settings"),
+        ("📖","User Guide"),
     ]
     for icon, name in pages:
-        if st.button(f"{icon}  {name}", key=f"nav_{name}", use_container_width=True):
+        label = KN.get(name, name) if lang == "ಕನ್ನಡ" else name
+        if st.button(f"{icon}  {label}", key=f"nav_{name}", use_container_width=True):
             st.session_state.page = name
             st.rerun()
 
@@ -166,90 +187,12 @@ with st.sidebar:
 
 # ── PAGES ──
 page = st.session_state.page
-if page == "Guide":
-
-    st.title("📘 FinFlow – Quick User Guide")
-    st.info("Follow these steps to process invoices and generate GST reports.")
-
-    st.divider()
-
-    # Step 1
-    st.subheader("1️⃣ Upload Invoice")
-    st.image("images/upload.png", use_container_width=True)
-    st.write("""
-    Go to **Upload & Extract** and upload an invoice image or PDF.
-    
-    FinFlow will automatically extract:
-    - Vendor Name
-    - GSTIN
-    - Tax values (CGST, SGST, IGST)
-    - Total Amount
-    """)
-
-    st.divider()
-
-    # Step 2
-    st.subheader("2️⃣ Manual Entry")
-    st.image("images/manual_entry.png", use_container_width=True)
-    st.write("""
-    If the OCR extraction is incorrect or missing data:
-    
-    - Open **Manual Entry**
-    - Fill invoice details
-    - Save the record to the register
-    """)
-
-    st.divider()
-
-    # Step 3
-    st.subheader("3️⃣ Dashboard Overview")
-    st.image("images/dashboard.png", use_container_width=True)
-    st.write("""
-    The **Dashboard** provides a summary of your business data:
-    
-    - Total Purchases
-    - Total Sales
-    - Net GST Payable
-    """)
-
-    st.divider()
-
-    # Step 4
-    st.subheader("4️⃣ Purchase & Sales Registers")
-    st.image("images/registers.png", use_container_width=True)
-    st.write("""
-    These registers store all processed invoices.
-
-    **Purchase Register**
-    - Shows supplier invoices
-    - Tracks Input Tax Credit
-
-    **Sales Register**
-    - Shows customer invoices
-    - Tracks GST collected
-    """)
-
-    st.divider()
-
-    # Step 5
-    st.subheader("5️⃣ GST Reconciliation")
-    st.image("images/reconciliation.png", use_container_width=True)
-    st.write("""
-    Compare your purchase data with **GSTR-2A / 2B**.
-
-    FinFlow highlights:
-    - ✅ Matched invoices
-    - ⚠️ Missing invoices
-    - ❌ Tax mismatches
-    """)
-
-    st.success("💡 Tip: Upload invoices regularly to maintain accurate GST reports.")
 
 
 # ════════════════════════════════════════════════
 # DASHBOARD
 # ════════════════════════════════════════════════
-elif page == "Dashboard":
+if page == "Dashboard":
     st.markdown('<div class="finflow-logo" style="font-size:2rem;margin-bottom:0.2rem;">FinFlow</div>', unsafe_allow_html=True)
     st.markdown('<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem;">GST Sales & Purchase Register</p>', unsafe_allow_html=True)
 
@@ -417,12 +360,18 @@ elif page == "Upload & Extract":
                     {'📤 SALES INVOICE → Goes to Sales Register' if 'Sales' in dtype else '📥 PURCHASE INVOICE → Goes to Purchase Register'}
                 </div>""", unsafe_allow_html=True)
                 st.progress(conf / 100)
+                if not ext_data.get("gstin"):
+                    has_tax = (ext_data.get("cgst",0) > 0 or ext_data.get("sgst",0) > 0 or ext_data.get("igst",0) > 0)
+                    if has_tax:
+                        st.error("🚨 ILLEGAL TAX ALERT — This party has NO GSTIN but has charged GST on this invoice. An unregistered dealer CANNOT collect GST by law. You CANNOT claim ITC on this. Demand a corrected invoice without any GST charges.")
+                    else:
+                        st.warning("⚠️ No GSTIN found — This party is Unregistered or on Composition Scheme. No Input Tax Credit (ITC) can be claimed on this purchase.")
                 st.markdown(f"""
                 <div class="extracted-card">
                     <div class="extracted-field"><span class="field-key">Vendor / Party</span><span class="field-val">{ext_data.get('vendor','')}</span></div>
                     <div class="extracted-field"><span class="field-key">Invoice Type</span><span class="field-val" style="color:{badge_color};">{ext_data.get('doc_type','')}</span></div>
                     <div class="extracted-field"><span class="field-key">Date</span><span class="field-val">{ext_data.get('date','')}</span></div>
-                    <div class="extracted-field"><span class="field-key">GSTIN</span><span class="field-val" style="font-family:DM Mono,monospace;">{ext_data.get('gstin','—')}</span></div>
+                    <div class="extracted-field"><span class="field-key">GSTIN</span><span class="field-val" style="font-family:DM Mono,monospace;">{"⚠️ No GSTIN — Unregistered Dealer" if not ext_data.get('gstin') else ext_data.get('gstin')}</span></div>
                     <div class="extracted-field"><span class="field-key">Category</span><span class="field-val">{ext_data.get('category','')}</span></div>
                     <div class="extracted-field"><span class="field-key">Subtotal</span><span class="field-val">₹{ext_data.get('subtotal',0):,.2f}</span></div>
                     <div class="extracted-field"><span class="field-key">CGST</span><span class="field-val">₹{ext_data.get('cgst',0):,.2f}</span></div>
@@ -671,7 +620,14 @@ elif page == "Reconciliation":
             s.assign(Register="Sales")    if not s.empty else pd.DataFrame(),
         ])
         g = all_df[["ID","Vendor","GSTIN","Register"]].copy()
-        g["Valid"] = g["GSTIN"].apply(lambda x: "✅ Valid" if re.match(r'^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]$', str(x)) else "⚠️ Check")
+        def check_gstin(x):
+            if not x or str(x).strip() == "" or str(x) == "nan":
+                return "❌ No GSTIN — Unregistered Dealer"
+            elif re.match(r'^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]$', str(x)):
+                return "✅ Valid"
+            else:
+                return "⚠️ Invalid Format"
+        g["Valid"] = g["GSTIN"].apply(check_gstin)
         st.dataframe(g, use_container_width=True, hide_index=True)
 
 
@@ -1033,3 +989,164 @@ elif page == "GSTR-2A / 2B":
                 data=recon_df.to_csv(index=False).encode(),
                 file_name=f"GSTR2A_Recon_{datetime.now().strftime('%Y%m%d')}.csv",
                 mime="text/csv", use_container_width=True)
+
+# ════════════════════════════════════════════════
+# USER GUIDE
+# ════════════════════════════════════════════════
+elif page == "User Guide":
+    lang = st.session_state.get("lang", "English")
+    is_kn = lang == "ಕನ್ನಡ"
+
+    if is_kn:
+        st.markdown('<div class="finflow-logo" style="font-size:1.8rem;margin-bottom:0.2rem;">FinFlow ಮಾರ್ಗದರ್ಶಿ</div>', unsafe_allow_html=True)
+        st.markdown('<p style="color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem;">ಈ ಅಪ್ಲಿಕೇಶನ್ ಅನ್ನು ಹೇಗೆ ಬಳಸಬೇಕು ಎಂಬ ಸಂಪೂರ್ಣ ಮಾಹಿತಿ</p>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="finflow-logo" style="font-size:1.8rem;margin-bottom:0.2rem;">📖 User Guide</div>', unsafe_allow_html=True)
+        st.markdown('<p style="color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem;">Complete guide on how to use FinFlow — step by step</p>', unsafe_allow_html=True)
+
+    # ── Visual Flow Diagram ──
+    st.markdown(f'<div class="section-header">{"📋 ಅಪ್ಲಿಕೇಶನ್ ಕಾರ್ಯ ವಿಧಾನ" if is_kn else "📋 How FinFlow Works"}</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;padding:1.25rem;
+        background:var(--surface);border:1px solid var(--border);border-radius:14px;">
+        <div style="text-align:center;padding:0.75rem 1rem;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.3);border-radius:10px;min-width:110px;">
+            <div style="font-size:1.8rem;">🧾</div>
+            <div style="font-size:0.75rem;color:#00E5A0;font-weight:600;margin-top:0.3rem;">Invoice</div>
+            <div style="font-size:0.68rem;color:var(--muted);">Upload PDF/Image</div>
+        </div>
+        <div style="font-size:1.5rem;color:var(--muted);">→</div>
+        <div style="text-align:center;padding:0.75rem 1rem;background:rgba(123,97,255,0.1);border:1px solid rgba(123,97,255,0.3);border-radius:10px;min-width:110px;">
+            <div style="font-size:1.8rem;">🤖</div>
+            <div style="font-size:0.75rem;color:#a89cff;font-weight:600;margin-top:0.3rem;">OCR Reads</div>
+            <div style="font-size:0.68rem;color:var(--muted);">AI extracts data</div>
+        </div>
+        <div style="font-size:1.5rem;color:var(--muted);">→</div>
+        <div style="text-align:center;padding:0.75rem 1rem;background:rgba(255,181,71,0.1);border:1px solid rgba(255,181,71,0.3);border-radius:10px;min-width:110px;">
+            <div style="font-size:1.8rem;">🔀</div>
+            <div style="font-size:0.75rem;color:#FFB547;font-weight:600;margin-top:0.3rem;">Auto Sort</div>
+            <div style="font-size:0.68rem;color:var(--muted);">Purchase or Sales</div>
+        </div>
+        <div style="font-size:1.5rem;color:var(--muted);">→</div>
+        <div style="text-align:center;padding:0.75rem 1rem;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.3);border-radius:10px;min-width:110px;">
+            <div style="font-size:1.8rem;">📊</div>
+            <div style="font-size:0.75rem;color:#00E5A0;font-weight:600;margin-top:0.3rem;">Dashboard</div>
+            <div style="font-size:0.68rem;color:var(--muted);">Live GST total</div>
+        </div>
+        <div style="font-size:1.5rem;color:var(--muted);">→</div>
+        <div style="text-align:center;padding:0.75rem 1rem;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:10px;min-width:110px;">
+            <div style="font-size:1.8rem;">🏛️</div>
+            <div style="font-size:0.75rem;color:#FF6B6B;font-weight:600;margin-top:0.3rem;">File GST</div>
+            <div style="font-size:0.68rem;color:var(--muted);">GSTR-1 / 3B ready</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Step by Step ──
+    st.markdown(f'<div class="section-header">{"🪜 ಹಂತ ಹಂತವಾಗಿ ಬಳಸಿ" if is_kn else "🪜 Step-by-Step Instructions"}</div>', unsafe_allow_html=True)
+
+    steps_en = [
+        ("1️⃣", "Upload Invoice", "Go to 📤 Upload & Extract → Click 'Browse files' → Select your bill (PDF or photo) → Click 🔍 Extract Data", "#00E5A0"),
+        ("2️⃣", "Review & Confirm", "Check if the vendor name, amount, CGST/SGST are correct → Fix any errors → Click ✅ Confirm & Add to Register", "#a89cff"),
+        ("3️⃣", "Check Registers", "Go to 📋 Purchase Register (bills you paid) or 💰 Sales Register (bills you raised) → See all entries", "#FFB547"),
+        ("4️⃣", "See Dashboard", "Go to 📊 Dashboard → See total purchases, sales, and NET GST you owe to government automatically", "#00E5A0"),
+        ("5️⃣", "GST Reports", "Go to 📄 GSTR-1 for sales report or 📑 GSTR-3B for net tax payable → Download CSV → File on GST portal", "#FF6B6B"),
+        ("6️⃣", "Reconciliation", "Go to 🔄 Reconciliation → Check if all GSTINs are valid → Identify unregistered dealers", "#FFB547"),
+    ]
+    steps_kn = [
+        ("1️⃣", "ಬಿಲ್ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ", "📤 Upload & Extract ಗೆ ಹೋಗಿ → 'Browse files' ಕ್ಲಿಕ್ ಮಾಡಿ → ನಿಮ್ಮ ಬಿಲ್ (PDF ಅಥವಾ ಫೋಟೋ) ಆಯ್ಕೆ ಮಾಡಿ → 🔍 Extract Data ಕ್ಲಿಕ್ ಮಾಡಿ", "#00E5A0"),
+        ("2️⃣", "ಪರಿಶೀಲಿಸಿ ಮತ್ತು ದೃಢಪಡಿಸಿ", "ಹೆಸರು, ಮೊತ್ತ, CGST/SGST ಸರಿಯಾಗಿದೆಯೇ ಎಂದು ನೋಡಿ → ತಪ್ಪಿದ್ದರೆ ಸರಿಪಡಿಸಿ → ✅ Confirm ಕ್ಲಿಕ್ ಮಾಡಿ", "#a89cff"),
+        ("3️⃣", "ನೋಂದಣಿ ನೋಡಿ", "📋 Purchase Register (ನೀವು ಕೊಂಡ ಬಿಲ್‌ಗಳು) ಅಥವಾ 💰 Sales Register (ನೀವು ಮಾರಿದ ಬಿಲ್‌ಗಳು) ತೆರೆಯಿರಿ", "#FFB547"),
+        ("4️⃣", "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ನೋಡಿ", "📊 Dashboard ಗೆ ಹೋಗಿ → ಒಟ್ಟು ಖರೀದಿ, ಮಾರಾಟ, ಮತ್ತು ಸರ್ಕಾರಕ್ಕೆ ಕೊಡಬೇಕಾದ GST ತಿಳಿಯುತ್ತದೆ", "#00E5A0"),
+        ("5️⃣", "GST ವರದಿ", "📄 GSTR-1 (ಮಾರಾಟ ವರದಿ) ಅಥವಾ 📑 GSTR-3B (ನಿವ್ವಳ ತೆರಿಗೆ) → CSV ಡೌನ್‌ಲೋಡ್ → GST ಪೋರ್ಟಲ್‌ನಲ್ಲಿ ಸಲ್ಲಿಸಿ", "#FF6B6B"),
+        ("6️⃣", "ಹೊಂದಾಣಿಕೆ", "🔄 Reconciliation ಗೆ ಹೋಗಿ → GSTIN ಸರಿಯಾಗಿದೆಯೇ ಪರಿಶೀಲಿಸಿ → ನೋಂದಾಯಿತವಲ್ಲದ ವ್ಯಾಪಾರಿಗಳನ್ನು ಗುರುತಿಸಿ", "#FFB547"),
+    ]
+
+    steps = steps_kn if is_kn else steps_en
+    for num, title, desc, color in steps:
+        st.markdown(f"""
+        <div style="display:flex;gap:1rem;margin-bottom:1rem;padding:1.1rem 1.25rem;
+            background:var(--surface);border:1px solid var(--border);border-radius:12px;
+            border-left:4px solid {color};">
+            <div style="font-size:1.6rem;flex-shrink:0;">{num}</div>
+            <div>
+                <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;color:{color};margin-bottom:0.3rem;">{title}</div>
+                <div style="font-size:0.85rem;color:var(--muted);line-height:1.6;">{desc}</div>
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+    # ── ITC Rules Visual ──
+    st.markdown(f'<div class="section-header">{"💡 ITC (Input Tax Credit) ನಿಯಮಗಳು" if is_kn else "💡 ITC Rules — When Can You Claim?"}</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+        <div style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:12px;padding:1.25rem;">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;">✅</div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;color:#00E5A0;margin-bottom:0.75rem;">
+                {"ITC ಕ್ಲೇಮ್ ಮಾಡಬಹುದು" if is_kn else "ITC Can Be Claimed"}
+            </div>
+            <div style="font-size:0.85rem;color:var(--muted);line-height:2;">
+                {"✔ ವ್ಯಾಪಾರಿಯ GSTIN ಇದೆ<br>✔ ಅವರು GSTR-1 ಸಲ್ಲಿಸಿದ್ದಾರೆ<br>✔ ಬಿಲ್‌ನಲ್ಲಿ GST ಮೊತ್ತ ಇದೆ<br>✔ ನಿಮ್ಮ GSTR-2A ನಲ್ಲಿ ಕಾಣಿಸಿಕೊಳ್ಳುತ್ತದೆ" 
+                if is_kn else 
+                "✔ Supplier has a valid GSTIN<br>✔ They have filed their GSTR-1<br>✔ Invoice shows GST amount<br>✔ It appears in your GSTR-2A"}
+            </div>
+        </div>
+        <div style="background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.3);border-radius:12px;padding:1.25rem;">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;">❌</div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;color:#FF6B6B;margin-bottom:0.75rem;">
+                {"ITC ಕ್ಲೇಮ್ ಮಾಡಲಾಗಲ್ಲ" if is_kn else "ITC Cannot Be Claimed"}
+            </div>
+            <div style="font-size:0.85rem;color:var(--muted);line-height:2;">
+                {"✘ ವ್ಯಾಪಾರಿಗೆ GSTIN ಇಲ್ಲ (ಅನೋಂದಿತ)<br>✘ Composition Scheme ನಲ್ಲಿದ್ದಾರೆ<br>✘ GSTIN ಇಲ್ಲದೇ ತೆರಿಗೆ ಸಂಗ್ರಹಿಸಿದ್ದಾರೆ — ಇದು ಕಾನೂನು ಬಾಹಿರ!<br>✘ GSTR-1 ಸಲ್ಲಿಸಿಲ್ಲ" 
+                if is_kn else 
+                "✘ Supplier has NO GSTIN (Unregistered)<br>✘ Supplier is on Composition Scheme<br>✘ Tax charged without GSTIN — ILLEGAL!<br>✘ Supplier hasn't filed GSTR-1"}
+            </div>
+        </div>
+    </div>
+    <div style="background:rgba(255,181,71,0.08);border:1px solid rgba(255,181,71,0.4);border-radius:10px;padding:1rem 1.25rem;">
+        <div style="font-weight:700;color:#FFB547;margin-bottom:0.3rem;">
+            {"⚠️ ಮುಖ್ಯ ಎಚ್ಚರಿಕೆ" if is_kn else "⚠️ Important Warning"}
+        </div>
+        <div style="font-size:0.85rem;color:var(--muted);">
+            {"ಯಾವ ವ್ಯಾಪಾರಿಗೆ GSTIN ಇಲ್ಲವೋ ಅವರು GST ಸಂಗ್ರಹಿಸುವ ಹಕ್ಕು ಹೊಂದಿಲ್ಲ. ನೀವು ಅಂತಹ ವ್ಯಾಪಾರಿಗೆ GST ಕೊಟ್ಟರೆ, ನೀವು ಅದನ್ನು ಮರಳಿ ಕ್ಲೇಮ್ ಮಾಡಲಾಗಲ್ಲ ಮತ್ತು ಆ ವ್ಯಾಪಾರಿ ಕಾನೂನು ಉಲ್ಲಂಘನೆ ಮಾಡುತ್ತಿದ್ದಾರೆ."
+            if is_kn else
+            "A supplier without a GSTIN has NO legal right to collect GST. If they charge you GST without a GSTIN, that tax is illegally collected — you cannot claim ITC on it, and you should report it or demand a corrected invoice without GST."}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Icon Legend ──
+    st.markdown(f'<div class="section-header">{"🎨 ಬಣ್ಣ ಮತ್ತು ಚಿಹ್ನೆ ಅರ್ಥ" if is_kn else "🎨 Colour & Icon Legend"}</div>', unsafe_allow_html=True)
+    legends = [
+        ("#00E5A0", "✅", "Green / ಹಸಿರು", "Good — Sales, ITC Matched, Valid GSTIN / ಮಾರಾಟ, ಸರಿಯಾದ GSTIN"),
+        ("#FFB547", "⚠️", "Yellow / ಹಳದಿ", "Warning — Check needed, Purchase input tax / ಎಚ್ಚರಿಕೆ, ಖರೀದಿ ತೆರಿಗೆ"),
+        ("#FF6B6B", "❌", "Red / ಕೆಂಪು", "Danger — Tax payable, No GSTIN, Mismatch / ತೆರಿಗೆ ಕೊಡಬೇಕು, GSTIN ಇಲ್ಲ"),
+        ("#a89cff", "🔒", "Purple / ನೇರಳೆ", "GSTR-2B — Locked ITC snapshot / ಲಾಕ್ ಆದ ITC ಮಾಹಿತಿ"),
+    ]
+    cols = st.columns(4)
+    for col, (color, icon, label, desc) in zip(cols, legends):
+        col.markdown(f"""
+        <div style="background:var(--surface);border:1px solid {color}44;border-radius:10px;padding:1rem;text-align:center;">
+            <div style="font-size:1.6rem;">{icon}</div>
+            <div style="color:{color};font-weight:700;font-size:0.82rem;margin:0.3rem 0;">{label}</div>
+            <div style="color:var(--muted);font-size:0.72rem;line-height:1.5;">{desc}</div>
+        </div>""", unsafe_allow_html=True)
+
+    # ── FAQ ──
+    st.markdown(f'<div class="section-header">{"❓ ಸಾಮಾನ್ಯ ಪ್ರಶ್ನೆಗಳು" if is_kn else "❓ Frequently Asked Questions"}</div>', unsafe_allow_html=True)
+    faqs_en = [
+        ("What is ITC?", "Input Tax Credit (ITC) means the GST you paid on purchases can be deducted from the GST you collected on sales. You only pay the difference to the government."),
+        ("My supplier doesn't have a GSTIN — can I still claim ITC?", "No. If your supplier has no GSTIN, they are unregistered and cannot legally charge GST. You cannot claim ITC on that purchase. Ask them to remove GST from the bill."),
+        ("What is Composition Scheme?", "Small businesses with turnover below ₹1.5 crore can choose Composition Scheme. They pay a flat low tax rate but CANNOT collect GST from buyers and CANNOT give ITC."),
+        ("What if OCR reads the wrong amount?", "You can manually correct any field in the Review & Confirm section before adding the entry. Always double-check extracted data."),
+        ("How often should I file GST?", "GSTR-1 by 11th of next month (sales). GSTR-3B by 20th of next month (net tax payment). Late filing attracts ₹50/day penalty + 18% annual interest."),
+    ]
+    faqs_kn = [
+        ("ITC ಎಂದರೇನು?", "Input Tax Credit (ITC) ಎಂದರೆ ನೀವು ಖರೀದಿಗೆ ಕೊಟ್ಟ GST ಅನ್ನು ನೀವು ಮಾರಾಟದಲ್ಲಿ ಸಂಗ್ರಹಿಸಿದ GST ನಿಂದ ಕಳೆಯಬಹುದು. ಉಳಿದ ಮೊತ್ತ ಮಾತ್ರ ಸರ್ಕಾರಕ್ಕೆ ಕೊಡಿ."),
+        ("ನನ್ನ ವ್ಯಾಪಾರಿಗೆ GSTIN ಇಲ್ಲ — ITC ಕ್ಲೇಮ್ ಮಾಡಬಹುದೇ?", "ಇಲ್ಲ. GSTIN ಇಲ್ಲದ ವ್ಯಾಪಾರಿ GST ಸಂಗ್ರಹಿಸುವ ಹಕ್ಕು ಹೊಂದಿಲ್ಲ. ಅಂಥ ಖರೀದಿಗೆ ITC ಸಿಗಲ್ಲ. ಅವರಿಗೆ GST ಇಲ್ಲದ ಬಿಲ್ ಕೊಡಲು ಕೇಳಿ."),
+        ("Composition Scheme ಎಂದರೇನು?", "₹1.5 ಕೋಟಿಗಿಂತ ಕಡಿಮೆ ವಹಿವಾಟು ಇರುವ ಸಣ್ಣ ವ್ಯಾಪಾರಿಗಳು Composition Scheme ಆಯ್ಕೆ ಮಾಡಬಹುದು. ಅವರು ಕಡಿಮೆ ದರದಲ್ಲಿ ತೆರಿಗೆ ಕೊಡುತ್ತಾರೆ ಆದರೆ GST ಸಂಗ್ರಹಿಸಲು ಅನುಮತಿ ಇಲ್ಲ."),
+        ("OCR ತಪ್ಪಾಗಿ ಓದಿದರೆ?", "Review & Confirm ವಿಭಾಗದಲ್ಲಿ ನೀವು ಯಾವ ಮಾಹಿತಿಯನ್ನೂ ಸರಿಪಡಿಸಬಹುದು. ಯಾವಾಗಲೂ ದಾಖಲಿಸುವ ಮೊದಲು ಪರಿಶೀಲಿಸಿ."),
+        ("GST ಎಷ್ಟು ಬಾರಿ ಸಲ್ಲಿಸಬೇಕು?", "GSTR-1 — ಮುಂದಿನ ತಿಂಗಳ 11ನೇ ತಾರೀಕಿಗೆ (ಮಾರಾಟ). GSTR-3B — 20ನೇ ತಾರೀಕಿಗೆ (ನಿವ್ವಳ ತೆರಿಗೆ). ತಡವಾದರೆ ₹50/ದಿನ ದಂಡ + 18% ಬಡ್ಡಿ."),
+    ]
+    faqs = faqs_kn if is_kn else faqs_en
+    for q, a in faqs:
+        with st.expander(f"❓ {q}"):
+            st.markdown(f'<div style="color:var(--muted);font-size:0.88rem;line-height:1.7;padding:0.25rem 0;">{a}</div>', unsafe_allow_html=True)

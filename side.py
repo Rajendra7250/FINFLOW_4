@@ -4,6 +4,7 @@ import pandas as pd
 import os
 import re
 from datetime import datetime, date
+
 def run_ocr(uploaded_file) -> dict:
     try:
         import pytesseract
@@ -102,12 +103,19 @@ def parse_invoice_text(text: str) -> dict:
     gstin = gstin_match[0].upper() if gstin_match else ""
 
     total = find_amount([
-        r'(?:total\s*amount\s*payable|grand\s*total|total\s*amount)[:\sRs.]*([0-9,]+\.?\d*)',
-        r'total\s*payable[:\sRs.]*([0-9,]+\.?\d*)',
+    r'total\s*amount\s*payable\s*(?:rs\.?|inr)?\s*([0-9,]+\.\d{2})',
+    r'grand\s*total\s*(?:rs\.?|inr)?\s*([0-9,]+\.\d{2})',
+    r'total\s*payable\s*(?:rs\.?|inr)?\s*([0-9,]+\.\d{2})',
     ])
-    if total == 0.0:
-        all_nums = [float(x) for x in re.findall(r'\b\d{1,7}\.\d{2}\b', full)]
-        total = max(all_nums) if all_nums else 0.0
+    # Extract round off
+roundoff = find_amount([
+    r'round\s*off[:\sRs.]*([0-9,]+\.\d+)'
+])
+
+# If total not detected correctly, compute it
+if total == 0.0 or total < subtotal:
+    total = subtotal + cgst + sgst + igst + roundoff
+    total = round(total, 2)
 
     subtotal = find_amount([r'(?:taxable\s*value|subtotal)[:\sRs.]*([0-9,]+\.?\d*)'])
     cgst = find_amount([r'CGST\s*@\s*\d+\.?\d*\s*%\s*(?:Rs\.?|INR)?\s*([0-9,]{3,}\.?\d*)', r'CGST\s*@?\s*[\d.]*\s*%?\s*[:\sRs.]*([0-9,]{2,}\.?\d*)'])

@@ -3,7 +3,6 @@ import pandas as pd
 import os
 import re
 from datetime import datetime, date
-from side import *
 
 st.set_page_config(
     page_title="FinFlow · GST Register",
@@ -107,13 +106,223 @@ def init_state():
         "counter": 1,
         "extracted": None,
         "inv_type_detected": "Purchase Invoice",
-        "gstr2a_data": pd.DataFrame(columns=["GSTIN","Vendor","InvoiceNo","Date","Taxable","CGST","SGST","IGST","Total","Source"]),
     }
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
 
 init_state()
+
+# ── OCR (Tesseract) ──
+def run_ocr(uploaded_file) -> dict:
+    try:
+        import pytesseract
+        from PIL import Image
+    except ImportError:
+        raise ImportError("Run: pip install pytesseract pillow")
+
+    import shutil
+    if shutil.which("tesseract") is None:
+        for path in [
+            r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+            r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+        ]:
+            if os.path.exists(path):
+                pytesseract.pytesseract.tesseract_cmd = path
+                break
+
+    file_bytes = uploaded_file.read()
+    ext = uploaded_file.name.lower().rsplit(".", 1)[-1]
+
+    if ext == "pdf":
+        try:
+            import fitz
+            pdf_doc = fitz.open(stream=file_bytes, filetype="pdf")
+            page = pdf_doc[0]
+            mat = fitz.Matrix(3, 3)
+            pix = page.get_pixmap(matrix=mat)
+            from io import BytesIO
+            img = Image.open(BytesIO(pix.tobytes("png")))
+        except ImportError:
+            try:
+                from pdf2image import convert_from_bytes
+                pages = convert_from_bytes(file_bytes, dpi=300)
+                img = pages[0]
+            except Exception:
+                raise ImportError("PDF support requires pymupdf. Run: pip install pymupdf")
+    else:
+        from io import BytesIO
+        img = Image.open(BytesIO(file_bytes))
+
+    raw_text = pytesseract.image_to_string(img, lang="eng")
+
+    if not raw_text.strip():
+        st.error("OCR found no text. Try a clearer image.")
+        return {}
+
+    return parse_invoice_text(raw_text)
+
+
+def parse_invoice_text(text: str) -> dict:
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    full  = " ".join(lines)
+
+    def find_amount(patterns):
+        for p in patterns:
+            m = re.search(p, full, re.IGNORECASE)
+            if m:
+                try: return float(m.group(1).replace(",","").replace(" ",""))
+                except: pass
+        return 0.0
+
+    # ── Detect invoice type ──
+    if re.search(r'sales\s*invoice|sale\s*invoice', full, re.IGNORECASE):
+        doc_type = "Sales Invoice"
+    elif re.search(r'credit\s*note', full, re.IGNORECASE):
+        doc_type = "Credit Note"
+    elif re.search(r'debit\s*note', full, re.IGNORECASE):
+        doc_type = "Debit Note"
+    elif re.search(r'purchase\s*invoice', full, re.IGNORECASE):
+        doc_type = "Purchase Invoice"
+    else:
+        doc_type = "Purchase Invoice"
+
+    # ── Vendor detection ──
+    skip_pats = [
+        r'\d{2}[A-Za-z]{5}\d{4}', r'phone|email|gstin|gst no|billing|authorised',
+        r'@', r'^[\d\s\-\+]+$', r'^\d+$',
+        r'tax invoice|purchase invoice|sales invoice|invoice no|bill to|due date',
+    ]
+
+    def find_company(line_list):
+        for line in line_list:
+            lc = re.sub(r'[|/*]', '', line).strip()
+            if len(lc) < 4: continue
+            skip = any(re.search(p, lc, re.IGNORECASE) for p in skip_pats)
+            if not skip and any(c.isalpha() for c in lc):
+                return lc
+        return "Unknown"
+
+    bill_idx = next((i for i,l in enumerate(lines) if re.search(r'bill\s*to', l, re.IGNORECASE)), len(lines))
+    seller   = find_company(lines[:bill_idx])
+    buyer    = find_company(lines[bill_idx+1:bill_idx+6])
+    vendor   = buyer if doc_type == "Sales Invoice" else seller
+
+    # ── Date ──
+    dm = re.search(r'(?:invoice\s*date|date)[:\s]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})', full, re.IGNORECASE)
+    if not dm: dm = re.search(r'(\d{2}[-/]\d{2}[-/]\d{4})', full)
+    date_str = dm.group(1).replace("/","-") if dm else date.today().strftime("%d-%m-%Y")
+
+    # ── GSTIN ──
+    gstin_match = re.findall(r'\b\d{2}[A-Za-z]{5}\d{4}[A-Za-z][A-Za-z0-9][Zz][A-Za-z0-9]\b', full)
+    gstin = gstin_match[0].upper() if gstin_match else ""
+
+    # ── Amounts ──
+    total = find_amount([
+        r'(?:total\s*amount\s*payable|grand\s*total|total\s*amount)[:\sRs.]*([0-9,]+\.?\d*)',
+        r'total\s*payable[:\sRs.]*([0-9,]+\.?\d*)',
+    ])
+    if total == 0.0:
+        all_nums = [float(x) for x in re.findall(r'\b\d{1,7}\.\d{2}\b', full)]
+        total = max(all_nums) if all_nums else 0.0
+
+    subtotal = find_amount([r'(?:taxable\s*value|subtotal)[:\sRs.]*([0-9,]+\.?\d*)'])
+    cgst     = find_amount([
+        r'CGST\s*@\s*\d+\.?\d*\s*%\s*(?:Rs\.?|INR)?\s*([0-9,]{3,}\.?\d*)',
+        r'CGST\s*@?\s*[\d.]*\s*%?\s*[:\sRs.]*([0-9,]{2,}\.?\d*)',
+    ])
+    sgst     = find_amount([
+        r'SGST\s*@\s*\d+\.?\d*\s*%\s*(?:Rs\.?|INR)?\s*([0-9,]{3,}\.?\d*)',
+        r'SGST\s*@?\s*[\d.]*\s*%?\s*[:\sRs.]*([0-9,]{2,}\.?\d*)',
+    ])
+    igst     = find_amount([
+        r'IGST\s*@\s*\d+\.?\d*\s*%\s*(?:Rs\.?|INR)?\s*([0-9,]{3,}\.?\d*)',
+        r'IGST\s*@?\s*[\d.]*\s*%?\s*[:\sRs.]*([0-9,]{2,}\.?\d*)',
+    ])
+
+    if subtotal == 0.0 and total > 0:
+        tax = cgst + sgst + igst
+        subtotal = round(total - tax, 2) if tax > 0 else round(total / 1.18, 2)
+    if cgst == 0.0 and sgst == 0.0 and igst == 0.0 and total > 0 and subtotal > 0:
+        tax = round(total - subtotal, 2)
+        cgst = sgst = round(tax / 2, 2)
+
+    # ── Category ──
+    category = "Miscellaneous"
+    tl = full.lower()
+    kw_map = {
+        "Office Supplies":       ["stationery","paper","pen","office"],
+        "Travel & Transport":    ["travel","transport","cab","fuel","flight"],
+        "Utilities":             ["electricity","water","internet"],
+        "Rent":                  ["rent","lease"],
+        "Professional Services": ["consulting","legal","audit"],
+        "IT & Software":         ["software","laptop","computer","server"],
+        "Marketing":             ["marketing","advertisement","printing"],
+        "Raw Materials":         ["seeds","fertilizer","agriculture","grain","rice","wheat","fabric","cotton"],
+    }
+    for cat, kws in kw_map.items():
+        if any(k in tl for k in kws):
+            category = cat
+            break
+
+    found = sum([bool(vendor and vendor!="Unknown"), bool(gstin), total>0, subtotal>0, cgst>0 or sgst>0])
+    confidence = min(55 + found * 9, 95)
+
+    return {
+        "vendor": vendor, "date": date_str, "gstin": gstin, "doc_type": doc_type,
+        "subtotal": subtotal, "cgst": cgst, "sgst": sgst, "igst": igst,
+        "total": total, "category": category, "confidence": confidence,
+    }
+
+
+# ── HELPERS ──
+def make_id(prefix):
+    return f"{prefix}-{datetime.now().strftime('%y%m%d')}-{st.session_state.counter:04d}"
+
+def add_to_register(data: dict, doc_type: str):
+    is_sales = "Sales" in doc_type
+    prefix   = "SAL" if is_sales else "PUR"
+    txn_id   = make_id(prefix)
+    row = {
+        "ID": txn_id, "Date": data.get("date",""),
+        "Vendor": data.get("vendor",""), "GSTIN": data.get("gstin",""),
+        "Category": data.get("category",""),
+        "Subtotal": data.get("subtotal",0), "CGST": data.get("cgst",0),
+        "SGST": data.get("sgst",0),         "IGST": data.get("igst",0),
+        "Total": data.get("total",0),       "Status": "Verified",
+    }
+    reg_key = "sales_register" if is_sales else "purchase_register"
+    st.session_state[reg_key] = pd.concat(
+        [st.session_state[reg_key], pd.DataFrame([row])], ignore_index=True
+    )
+    st.session_state.counter += 1
+    return txn_id, reg_key
+
+def get_tax_summary():
+    p = st.session_state.purchase_register
+    s = st.session_state.sales_register
+
+    def tax_sum(df):
+        if df.empty: return 0.0, 0.0, 0.0, 0.0
+        return (df["CGST"].astype(float).sum(),
+                df["SGST"].astype(float).sum(),
+                df["IGST"].astype(float).sum(),
+                df["Total"].astype(float).sum())
+
+    p_cgst, p_sgst, p_igst, p_total = tax_sum(p)
+    s_cgst, s_sgst, s_igst, s_total = tax_sum(s)
+
+    return {
+        "p_cgst": p_cgst, "p_sgst": p_sgst, "p_igst": p_igst, "p_total": p_total,
+        "s_cgst": s_cgst, "s_sgst": s_sgst, "s_igst": s_igst, "s_total": s_total,
+        "net_cgst": round(s_cgst - p_cgst, 2),
+        "net_sgst": round(s_sgst - p_sgst, 2),
+        "net_igst": round(s_igst - p_igst, 2),
+        "net_tax":  round((s_cgst+s_sgst+s_igst) - (p_cgst+p_sgst+p_igst), 2),
+        "p_count":  len(p),
+        "s_count":  len(s),
+    }
+
 
 # ── SIDEBAR ──
 with st.sidebar:
@@ -126,17 +335,12 @@ with st.sidebar:
     st.markdown("---")
 
     pages = [
-        ("📘","Guide"),
         ("📊","Dashboard"),
         ("📤","Upload & Extract"),
         ("✏️","Manual Entry"),
         ("📋","Purchase Register"),
         ("💰","Sales Register"),
         ("🔄","Reconciliation"),
-        ("📄","GSTR-1 Report"),
-        ("📑","GSTR-3B Report"),
-        ("🔍","GSTR-2A / 2B"),
-        ("⚙️","Settings"),
     ]
     for icon, name in pages:
         if st.button(f"{icon}  {name}", key=f"nav_{name}", use_container_width=True):
@@ -166,90 +370,12 @@ with st.sidebar:
 
 # ── PAGES ──
 page = st.session_state.page
-if page == "Guide":
-
-    st.title("📘 FinFlow – Quick User Guide")
-    st.info("Follow these steps to process invoices and generate GST reports.")
-
-    st.divider()
-
-    # Step 1
-    st.subheader("1️⃣ Upload Invoice")
-    st.image("images/upload.png", use_container_width=True)
-    st.write("""
-    Go to **Upload & Extract** and upload an invoice image or PDF.
-    
-    FinFlow will automatically extract:
-    - Vendor Name
-    - GSTIN
-    - Tax values (CGST, SGST, IGST)
-    - Total Amount
-    """)
-
-    st.divider()
-
-    # Step 2
-    st.subheader("2️⃣ Manual Entry")
-    st.image("images/manual_entry.png", use_container_width=True)
-    st.write("""
-    If the OCR extraction is incorrect or missing data:
-    
-    - Open **Manual Entry**
-    - Fill invoice details
-    - Save the record to the register
-    """)
-
-    st.divider()
-
-    # Step 3
-    st.subheader("3️⃣ Dashboard Overview")
-    st.image("images/dashboard.png", use_container_width=True)
-    st.write("""
-    The **Dashboard** provides a summary of your business data:
-    
-    - Total Purchases
-    - Total Sales
-    - Net GST Payable
-    """)
-
-    st.divider()
-
-    # Step 4
-    st.subheader("4️⃣ Purchase & Sales Registers")
-    st.image("images/registers.png", use_container_width=True)
-    st.write("""
-    These registers store all processed invoices.
-
-    **Purchase Register**
-    - Shows supplier invoices
-    - Tracks Input Tax Credit
-
-    **Sales Register**
-    - Shows customer invoices
-    - Tracks GST collected
-    """)
-
-    st.divider()
-
-    # Step 5
-    st.subheader("5️⃣ GST Reconciliation")
-    st.image("images/reconciliation.png", use_container_width=True)
-    st.write("""
-    Compare your purchase data with **GSTR-2A / 2B**.
-
-    FinFlow highlights:
-    - ✅ Matched invoices
-    - ⚠️ Missing invoices
-    - ❌ Tax mismatches
-    """)
-
-    st.success("💡 Tip: Upload invoices regularly to maintain accurate GST reports.")
 
 
 # ════════════════════════════════════════════════
 # DASHBOARD
 # ════════════════════════════════════════════════
-elif page == "Dashboard":
+if page == "Dashboard":
     st.markdown('<div class="finflow-logo" style="font-size:2rem;margin-bottom:0.2rem;">FinFlow</div>', unsafe_allow_html=True)
     st.markdown('<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem;">GST Sales & Purchase Register</p>', unsafe_allow_html=True)
 
@@ -286,6 +412,7 @@ elif page == "Dashboard":
         </div>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
+
     left, right = st.columns(2)
 
     with left:
@@ -319,7 +446,9 @@ elif page == "Dashboard":
                 display:flex;justify-content:space-between;align-items:center;">
                 <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;">TOTAL TAX NET</span>
                 <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;
-                    color:{'#FF6B6B' if tx['net_tax']>0 else '#00E5A0'};">₹{tx['net_tax']:,.2f}</span>
+                    color:{'#FF6B6B' if tx['net_tax']>0 else '#00E5A0'};">
+                    ₹{tx['net_tax']:,.2f}
+                </span>
             </div>
             <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem;">
                 {'⚠️ Tax payable to government' if tx['net_tax']>0 else '✅ Input credit exceeds output tax'}
@@ -329,8 +458,11 @@ elif page == "Dashboard":
 
     with right:
         st.markdown('<div class="section-header">📊 Sales vs Purchases</div>', unsafe_allow_html=True)
-        chart_data = pd.DataFrame({"Amount": [tx['p_total'], tx['s_total']]}, index=["Purchases", "Sales"])
+        chart_data = pd.DataFrame({
+            "Amount": [tx['p_total'], tx['s_total']],
+        }, index=["Purchases", "Sales"])
         st.bar_chart(chart_data, color="#00E5A0")
+
         st.markdown(f"""
         <div style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);
             border-radius:10px;padding:0.9rem 1.1rem;margin-top:0.75rem;">
@@ -353,25 +485,6 @@ elif page == "Dashboard":
         disp["Total"] = disp["Total"].apply(lambda x: f"₹{float(x):,.2f}")
         st.dataframe(disp, use_container_width=True, hide_index=True)
 
-    # GSTR Filing Status
-    st.markdown('<div class="section-header">📋 GSTR Filing Status</div>', unsafe_allow_html=True)
-    g1,g2,g3,g4 = st.columns(4)
-    has_data = not st.session_state.sales_register.empty or not st.session_state.purchase_register.empty
-    for col, label, form, desc in [
-        (g1,"GSTR-1","Outward Supplies","Sales register → File monthly"),
-        (g2,"GSTR-3B","Summary Return","Net tax payable summary"),
-        (g3,"GSTR-2A","Auto-Populated","From supplier filings"),
-        (g4,"GSTR-2B","Static ITC","Locked ITC statement"),
-    ]:
-        sc = "#FFB547" if has_data else "#5A6075"
-        st_txt = "Ready to File" if has_data else "No Data"
-        col.markdown(f"""<div class="kpi-card" style="border-color:{sc}33;">
-            <div class="kpi-label">{label}</div>
-            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin:0.3rem 0;">{form}</div>
-            <div style="font-size:0.75rem;color:{sc};margin-top:0.3rem;">{st_txt}</div>
-            <div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem;">{desc}</div>
-        </div>""", unsafe_allow_html=True)
-
 
 # ════════════════════════════════════════════════
 # UPLOAD & EXTRACT
@@ -384,12 +497,14 @@ elif page == "Upload & Extract":
 
     with col1:
         uploaded_file = st.file_uploader("Drop invoice here", type=["pdf","png","jpg","jpeg"])
+
         if uploaded_file:
             st.success(f"✓ {uploaded_file.name} ({uploaded_file.size//1024} KB)")
             ext = uploaded_file.name.lower().rsplit(".",1)[-1]
             if ext in ("png","jpg","jpeg"):
                 st.image(uploaded_file, width=420)
                 uploaded_file.seek(0)
+
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("🔍 Extract Data", use_container_width=True):
                 with st.spinner("Reading invoice..."):
@@ -407,6 +522,7 @@ elif page == "Upload & Extract":
                 ext_data = st.session_state.extracted
                 conf = ext_data.get("confidence", 80)
                 st.markdown('<div class="section-header">🔎 Extracted Fields</div>', unsafe_allow_html=True)
+
                 dtype = ext_data.get("doc_type","Purchase Invoice")
                 badge_color = "#00E5A0" if "Sales" in dtype else "#FFB547"
                 st.markdown(f"""
@@ -415,7 +531,9 @@ elif page == "Upload & Extract":
                     color:{badge_color};font-family:DM Mono,monospace;font-size:0.78rem;
                     font-weight:600;margin-bottom:1rem;">
                     {'📤 SALES INVOICE → Goes to Sales Register' if 'Sales' in dtype else '📥 PURCHASE INVOICE → Goes to Purchase Register'}
-                </div>""", unsafe_allow_html=True)
+                </div>
+                """, unsafe_allow_html=True)
+
                 st.progress(conf / 100)
                 st.markdown(f"""
                 <div class="extracted-card">
@@ -429,7 +547,8 @@ elif page == "Upload & Extract":
                     <div class="extracted-field"><span class="field-key">SGST</span><span class="field-val">₹{ext_data.get('sgst',0):,.2f}</span></div>
                     <div class="extracted-field"><span class="field-key">IGST</span><span class="field-val">₹{ext_data.get('igst',0):,.2f}</span></div>
                     <div class="extracted-field"><span class="field-key">Total Amount</span><span class="field-val" style="font-size:1.1rem;font-weight:700;">₹{ext_data.get('total',0):,.2f}</span></div>
-                </div>""", unsafe_allow_html=True)
+                </div>
+                """, unsafe_allow_html=True)
 
     with col2:
         st.markdown('<div class="section-header">✏️ Review & Confirm</div>', unsafe_allow_html=True)
@@ -444,20 +563,25 @@ elif page == "Upload & Extract":
                 gstin    = st.text_input("GSTIN", value=ext_data.get("gstin",""))
                 category = st.selectbox("Category", CATEGORIES,
                     index=CATEGORIES.index(ext_data["category"]) if ext_data.get("category") in CATEGORIES else 0)
+
                 c1, c2 = st.columns(2)
                 with c1:
                     subtotal = st.number_input("Subtotal (₹)", value=float(ext_data.get("subtotal",0)), min_value=0.0, step=0.01)
-                    cgst     = st.number_input("CGST (₹)", value=float(ext_data.get("cgst",0)), min_value=0.0, step=0.01)
+                    cgst     = st.number_input("CGST (₹)",     value=float(ext_data.get("cgst",0)),     min_value=0.0, step=0.01)
                 with c2:
-                    sgst     = st.number_input("SGST (₹)", value=float(ext_data.get("sgst",0)), min_value=0.0, step=0.01)
-                    igst     = st.number_input("IGST (₹)", value=float(ext_data.get("igst",0)), min_value=0.0, step=0.01)
+                    sgst     = st.number_input("SGST (₹)",     value=float(ext_data.get("sgst",0)),     min_value=0.0, step=0.01)
+                    igst     = st.number_input("IGST (₹)",     value=float(ext_data.get("igst",0)),     min_value=0.0, step=0.01)
+
                 total_calc = subtotal + cgst + sgst + igst
                 st.markdown(f"""
                 <div style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);
-                    border-radius:8px;padding:0.75rem 1rem;margin:0.5rem 0;display:flex;justify-content:space-between;">
+                    border-radius:8px;padding:0.75rem 1rem;margin:0.5rem 0;
+                    display:flex;justify-content:space-between;">
                     <span style="font-family:DM Mono,monospace;color:var(--muted);font-size:0.85rem;">Calculated Total</span>
                     <span style="font-family:Syne,sans-serif;font-weight:700;color:var(--accent);font-size:1.1rem;">₹{total_calc:,.2f}</span>
-                </div>""", unsafe_allow_html=True)
+                </div>
+                """, unsafe_allow_html=True)
+
                 submitted = st.form_submit_button("✅ Confirm & Add to Register", use_container_width=True)
                 if submitted:
                     data = {"vendor":vendor,"date":txn_date,"gstin":gstin,"category":category,
@@ -472,7 +596,8 @@ elif page == "Upload & Extract":
                 padding:3rem 2rem;text-align:center;margin-top:1rem;">
                 <div style="font-size:2.5rem;margin-bottom:0.75rem;">🔍</div>
                 <div style="color:var(--muted);">Upload a document and click Extract</div>
-            </div>""", unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════
@@ -490,6 +615,7 @@ elif page == "Manual Entry":
             txn_date = st.date_input("Date", value=date.today())
             gstin    = st.text_input("GSTIN (optional)")
             category = st.selectbox("Category", CATEGORIES)
+
             c1, c2 = st.columns(2)
             with c1:
                 subtotal = st.number_input("Subtotal (₹)", min_value=0.0, value=1000.0, step=1.0)
@@ -497,10 +623,12 @@ elif page == "Manual Entry":
             with c2:
                 sgst_pct = st.number_input("SGST %", min_value=0.0, max_value=28.0, value=9.0, step=0.5)
                 igst_pct = st.number_input("IGST %", min_value=0.0, max_value=28.0, value=0.0, step=0.5)
+
             cgst  = round(subtotal * cgst_pct / 100, 2)
             sgst  = round(subtotal * sgst_pct / 100, 2)
             igst  = round(subtotal * igst_pct / 100, 2)
             total = subtotal + cgst + sgst + igst
+
             st.markdown(f"""
             <div style="background:var(--surface2);border-radius:10px;padding:1rem;margin:0.5rem 0;border:1px solid var(--border);">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;font-size:0.85rem;margin-bottom:0.5rem;">
@@ -512,7 +640,9 @@ elif page == "Manual Entry":
                     <span style="font-weight:700;">Total</span>
                     <span style="color:var(--accent);font-weight:700;font-size:1.1rem;">₹{total:,.2f}</span>
                 </div>
-            </div>""", unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
+
             submit = st.form_submit_button("➕ Add Entry", use_container_width=True)
             if submit:
                 if not vendor:
@@ -547,24 +677,29 @@ elif page == "Purchase Register":
     st.markdown('<p style="color:var(--muted);">All invoices where you are the buyer — Input Tax Credit (ITC) eligible.</p>', unsafe_allow_html=True)
 
     df = st.session_state.purchase_register.copy()
+
     if df.empty:
-        st.markdown("""<div style="background:var(--surface);border:1px dashed var(--border);border-radius:16px;padding:4rem;text-align:center;">
+        st.markdown("""
+        <div style="background:var(--surface);border:1px dashed var(--border);border-radius:16px;padding:4rem;text-align:center;">
             <div style="font-size:3rem;">📋</div>
             <div style="color:var(--muted);margin-top:0.75rem;">No purchase entries yet. Upload purchase invoices or add manually.</div>
         </div>""", unsafe_allow_html=True)
     else:
         m1,m2,m3,m4 = st.columns(4)
-        with m1: st.metric("Total Purchases", f"₹{df['Total'].astype(float).sum():,.2f}")
-        with m2: st.metric("Input CGST (ITC)", f"₹{df['CGST'].astype(float).sum():,.2f}")
-        with m3: st.metric("Input SGST (ITC)", f"₹{df['SGST'].astype(float).sum():,.2f}")
-        with m4: st.metric("Entries", len(df))
+        with m1: st.metric("Total Purchases",  f"₹{df['Total'].astype(float).sum():,.2f}")
+        with m2: st.metric("Input CGST (ITC)",  f"₹{df['CGST'].astype(float).sum():,.2f}")
+        with m3: st.metric("Input SGST (ITC)",  f"₹{df['SGST'].astype(float).sum():,.2f}")
+        with m4: st.metric("Entries",           len(df))
+
         st.markdown("---")
         search = st.text_input("🔍 Search vendor")
         if search: df = df[df["Vendor"].str.contains(search, case=False, na=False)]
+
         disp = df.copy()
         for col in ["Subtotal","CGST","SGST","IGST","Total"]:
             disp[col] = disp[col].apply(lambda x: f"₹{float(x):,.2f}")
         st.dataframe(disp, use_container_width=True, hide_index=True, height=400)
+
         st.download_button("⬇️ Export Purchase Register CSV",
             data=df.to_csv(index=False).encode(),
             file_name=f"purchase_register_{datetime.now().strftime('%Y%m%d')}.csv",
@@ -579,24 +714,29 @@ elif page == "Sales Register":
     st.markdown('<p style="color:var(--muted);">All invoices where you are the seller — Output Tax collected from customers.</p>', unsafe_allow_html=True)
 
     df = st.session_state.sales_register.copy()
+
     if df.empty:
-        st.markdown("""<div style="background:var(--surface);border:1px dashed var(--border);border-radius:16px;padding:4rem;text-align:center;">
+        st.markdown("""
+        <div style="background:var(--surface);border:1px dashed var(--border);border-radius:16px;padding:4rem;text-align:center;">
             <div style="font-size:3rem;">💰</div>
             <div style="color:var(--muted);margin-top:0.75rem;">No sales entries yet. Upload sales invoices or add manually.</div>
         </div>""", unsafe_allow_html=True)
     else:
         m1,m2,m3,m4 = st.columns(4)
-        with m1: st.metric("Total Sales", f"₹{df['Total'].astype(float).sum():,.2f}")
-        with m2: st.metric("Output CGST", f"₹{df['CGST'].astype(float).sum():,.2f}")
-        with m3: st.metric("Output SGST", f"₹{df['SGST'].astype(float).sum():,.2f}")
-        with m4: st.metric("Entries", len(df))
+        with m1: st.metric("Total Sales",       f"₹{df['Total'].astype(float).sum():,.2f}")
+        with m2: st.metric("Output CGST",        f"₹{df['CGST'].astype(float).sum():,.2f}")
+        with m3: st.metric("Output SGST",        f"₹{df['SGST'].astype(float).sum():,.2f}")
+        with m4: st.metric("Entries",            len(df))
+
         st.markdown("---")
         search = st.text_input("🔍 Search buyer")
         if search: df = df[df["Vendor"].str.contains(search, case=False, na=False)]
+
         disp = df.copy()
         for col in ["Subtotal","CGST","SGST","IGST","Total"]:
             disp[col] = disp[col].apply(lambda x: f"₹{float(x):,.2f}")
         st.dataframe(disp, use_container_width=True, hide_index=True, height=400)
+
         st.download_button("⬇️ Export Sales Register CSV",
             data=df.to_csv(index=False).encode(),
             file_name=f"sales_register_{datetime.now().strftime('%Y%m%d')}.csv",
@@ -617,6 +757,7 @@ elif page == "Reconciliation":
         st.info("Add purchase and sales entries to run reconciliation.")
     else:
         st.markdown('<div class="section-header">📊 Full Tax Statement</div>', unsafe_allow_html=True)
+
         st.markdown(f"""
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;">
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;
@@ -650,6 +791,7 @@ elif page == "Reconciliation":
                 <span style="color:{'#FF6B6B' if tx['net_tax']>0 else '#00E5A0'};font-weight:800;font-size:1.2rem;">₹{tx['net_tax']:,.2f}</span>
             </div>
         </div>
+
         <div style="background:{'rgba(255,107,107,0.08)' if tx['net_tax']>0 else 'rgba(0,229,160,0.08)'};
             border:1px solid {'rgba(255,107,107,0.3)' if tx['net_tax']>0 else 'rgba(0,229,160,0.3)'};
             border-radius:10px;padding:1rem 1.25rem;">
@@ -673,363 +815,3 @@ elif page == "Reconciliation":
         g = all_df[["ID","Vendor","GSTIN","Register"]].copy()
         g["Valid"] = g["GSTIN"].apply(lambda x: "✅ Valid" if re.match(r'^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]$', str(x)) else "⚠️ Check")
         st.dataframe(g, use_container_width=True, hide_index=True)
-
-
-# ════════════════════════════════════════════════
-# GSTR-1 REPORT
-# ════════════════════════════════════════════════
-elif page == "GSTR-1 Report":
-    st.markdown('<div class="finflow-logo" style="font-size:1.6rem;margin-bottom:0.2rem;">GSTR-1</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.25rem;">
-        <b style="color:var(--accent);">Statement of Outward Supplies</b> — Filed by 11th of following month
-    </p>
-    <div style="background:rgba(123,97,255,0.08);border:1px solid rgba(123,97,255,0.25);border-radius:8px;
-        padding:0.6rem 1rem;margin-bottom:1.5rem;font-size:0.82rem;color:#a89cff;">
-        ℹ️ GSTR-1 reports all outward (sales) supplies. B2B invoices auto-appear in buyer's GSTR-2A.
-    </div>
-    """, unsafe_allow_html=True)
-
-    s_df = st.session_state.sales_register
-
-    if s_df.empty:
-        st.markdown("""<div style="background:var(--surface);border:1px dashed var(--border);border-radius:16px;
-            padding:4rem;text-align:center;">
-            <div style="font-size:3rem;">📄</div>
-            <div style="color:var(--muted);margin-top:0.75rem;">No sales data. Add sales invoices to generate GSTR-1.</div>
-        </div>""", unsafe_allow_html=True)
-    else:
-        summary, b2b_df, b2c_df = build_gstr1(s_df)
-
-        k1,k2,k3,k4,k5 = st.columns(5)
-        for col, label, val, sub in [
-            (k1, "Taxable Turnover",    f"₹{summary['total_taxable']:,.2f}", ""),
-            (k2, "Total CGST (Output)", f"₹{summary['total_cgst']:,.2f}", ""),
-            (k3, "Total SGST (Output)", f"₹{summary['total_sgst']:,.2f}", ""),
-            (k4, "Total IGST (Output)", f"₹{summary['total_igst']:,.2f}", ""),
-            (k5, "Grand Total",         f"₹{summary['grand_total']:,.2f}", f"{len(s_df)} invoices"),
-        ]:
-            col.markdown(f"""<div class="kpi-card">
-                <div class="kpi-label">{label}</div>
-                <div class="kpi-value" style="font-size:1.2rem;">{val}</div>
-                <div class="kpi-sub">{sub}</div>
-            </div>""", unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        tab1, tab2, tab3, tab4 = st.tabs(["📦 B2B Invoices", "🛒 B2C Invoices", "📊 HSN Summary", "📋 Full Table"])
-
-        with tab1:
-            st.markdown('<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">B2B invoices (with GSTIN) — auto-appear in buyer\'s GSTR-2A.</div>', unsafe_allow_html=True)
-            if b2b_df.empty:
-                st.info("No B2B invoices (no entries with GSTIN).")
-            else:
-                disp = b2b_df[["ID","Date","Vendor","GSTIN","Subtotal","CGST","SGST","IGST","Total"]].copy()
-                for c in ["Subtotal","CGST","SGST","IGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
-                st.dataframe(disp, use_container_width=True, hide_index=True)
-                total_tax = b2b_df["CGST"].astype(float).sum() + b2b_df["SGST"].astype(float).sum() + b2b_df["IGST"].astype(float).sum()
-                st.markdown(f'<div style="background:rgba(0,229,160,0.06);border-radius:8px;padding:0.5rem 1rem;font-size:0.82rem;color:var(--muted);">{len(b2b_df)} B2B invoice(s) · Taxable: {fmt_inr(b2b_df["Subtotal"].astype(float).sum())} · Tax: {fmt_inr(total_tax)}</div>', unsafe_allow_html=True)
-
-        with tab2:
-            st.markdown('<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">B2C invoices (no GSTIN) — buyer cannot claim ITC.</div>', unsafe_allow_html=True)
-            if b2c_df.empty:
-                st.info("No B2C invoices.")
-            else:
-                disp = b2c_df[["ID","Date","Vendor","Category","Subtotal","CGST","SGST","IGST","Total"]].copy()
-                for c in ["Subtotal","CGST","SGST","IGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
-                st.dataframe(disp, use_container_width=True, hide_index=True)
-
-        with tab3:
-            st.markdown('<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Category-wise summary (proxy for HSN/SAC grouping).</div>', unsafe_allow_html=True)
-            hsn = s_df.groupby("Category").agg(
-                Invoices=("ID","count"),
-                Taxable=("Subtotal", lambda x: x.astype(float).sum()),
-                CGST=("CGST", lambda x: x.astype(float).sum()),
-                SGST=("SGST", lambda x: x.astype(float).sum()),
-                IGST=("IGST", lambda x: x.astype(float).sum()),
-                Total=("Total", lambda x: x.astype(float).sum()),
-            ).reset_index()
-            for c in ["Taxable","CGST","SGST","IGST","Total"]: hsn[c] = hsn[c].apply(fmt_inr)
-            st.dataframe(hsn, use_container_width=True, hide_index=True)
-
-        with tab4:
-            disp = s_df.copy()
-            for c in ["Subtotal","CGST","SGST","IGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
-            st.dataframe(disp, use_container_width=True, hide_index=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.download_button("⬇️ Download GSTR-1 CSV",
-            data=s_df.to_csv(index=False).encode(),
-            file_name=f"GSTR1_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv", use_container_width=True)
-
-
-# ════════════════════════════════════════════════
-# GSTR-3B REPORT
-# ════════════════════════════════════════════════
-elif page == "GSTR-3B Report":
-    st.markdown('<div class="finflow-logo" style="font-size:1.6rem;margin-bottom:0.2rem;">GSTR-3B</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.25rem;">
-        <b style="color:var(--accent);">Monthly Summary Return</b> — Filed by 20th of following month
-    </p>
-    <div style="background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.2);border-radius:8px;
-        padding:0.6rem 1rem;margin-bottom:1.5rem;font-size:0.82rem;color:#ff9a9a;">
-        ⚠️ GSTR-3B is a self-declaration. Output tax − ITC = Net tax payable. Interest applies on late payment.
-    </div>
-    """, unsafe_allow_html=True)
-
-    s_df = st.session_state.sales_register
-    p_df = st.session_state.purchase_register
-
-    if s_df.empty and p_df.empty:
-        st.info("Add sales and purchase entries to generate GSTR-3B.")
-    else:
-        data = build_gstr3b(s_df, p_df)
-        tab1, tab2, tab3 = st.tabs(["📋 3.1 Output Tax", "📥 4. ITC Available", "💰 Net Tax Payable"])
-
-        with tab1:
-            st.markdown('<div style="font-size:0.9rem;font-family:Syne,sans-serif;font-weight:700;color:var(--text);margin-bottom:0.75rem;">Table 3.1 — Details of Outward Supplies & Tax Liability</div>', unsafe_allow_html=True)
-            rows = [
-                ("3.1(a)", "Outward taxable supplies (other than zero rated)", data["out_taxable"], data["out_cgst"], data["out_sgst"], data["out_igst"]),
-                ("3.1(b)", "Outward taxable supplies (zero rated)", 0, 0, 0, 0),
-                ("3.1(c)", "Other outward supplies (nil rated, exempt)", 0, 0, 0, 0),
-            ]
-            st.markdown(f"""
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-                <div style="display:grid;grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr 1fr;
-                    background:var(--surface2);padding:0.75rem 1rem;font-family:'DM Mono',monospace;
-                    font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">
-                    <span>Section</span><span>Nature</span><span>Taxable Value</span><span>CGST</span><span>SGST</span><span>IGST</span>
-                </div>
-                {"".join([f'<div style="display:grid;grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr 1fr;padding:0.75rem 1rem;border-top:1px solid var(--border);font-size:0.85rem;"><span style="font-family:DM Mono,monospace;color:var(--muted);font-size:0.75rem;">{r[0]}</span><span>{r[1]}</span><span style="color:var(--accent);">{fmt_inr(r[2])}</span><span>{fmt_inr(r[3])}</span><span>{fmt_inr(r[4])}</span><span>{fmt_inr(r[5])}</span></div>' for r in rows])}
-                <div style="display:grid;grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr 1fr;
-                    padding:0.75rem 1rem;border-top:2px solid var(--border);background:var(--surface2);font-weight:700;">
-                    <span></span><span>TOTAL OUTPUT TAX</span>
-                    <span style="color:var(--accent);">{fmt_inr(data['out_taxable'])}</span>
-                    <span style="color:#FF6B6B;">{fmt_inr(data['out_cgst'])}</span>
-                    <span style="color:#FF6B6B;">{fmt_inr(data['out_sgst'])}</span>
-                    <span style="color:#FF6B6B;">{fmt_inr(data['out_igst'])}</span>
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-        with tab2:
-            st.markdown('<div style="font-size:0.9rem;font-family:Syne,sans-serif;font-weight:700;color:var(--text);margin-bottom:0.75rem;">Table 4 — Eligible Input Tax Credit (ITC)</div>', unsafe_allow_html=True)
-            itc_rows = [
-                ("4(A)(1)", "ITC on Imports of goods", 0, 0, 0, 0),
-                ("4(A)(2)", "ITC on Imports of services", 0, 0, 0, 0),
-                ("4(A)(5)", "All other ITC (domestic purchases)", data["itc_taxable"], data["itc_cgst"], data["itc_sgst"], data["itc_igst"]),
-            ]
-            st.markdown(f"""
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-                <div style="display:grid;grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr 1fr;
-                    background:var(--surface2);padding:0.75rem 1rem;font-family:'DM Mono',monospace;
-                    font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">
-                    <span>Section</span><span>Nature</span><span>Taxable Value</span><span>CGST</span><span>SGST</span><span>IGST</span>
-                </div>
-                {"".join([f'<div style="display:grid;grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr 1fr;padding:0.75rem 1rem;border-top:1px solid var(--border);font-size:0.85rem;"><span style="font-family:DM Mono,monospace;color:var(--muted);font-size:0.75rem;">{r[0]}</span><span>{r[1]}</span><span style="color:#FFB547;">{fmt_inr(r[2])}</span><span>{fmt_inr(r[3])}</span><span>{fmt_inr(r[4])}</span><span>{fmt_inr(r[5])}</span></div>' for r in itc_rows])}
-                <div style="display:grid;grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr 1fr;
-                    padding:0.75rem 1rem;border-top:2px solid var(--border);background:var(--surface2);font-weight:700;">
-                    <span></span><span>TOTAL ITC AVAILABLE</span>
-                    <span style="color:#FFB547;">{fmt_inr(data['itc_taxable'])}</span>
-                    <span style="color:#00E5A0;">{fmt_inr(data['itc_cgst'])}</span>
-                    <span style="color:#00E5A0;">{fmt_inr(data['itc_sgst'])}</span>
-                    <span style="color:#00E5A0;">{fmt_inr(data['itc_igst'])}</span>
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-        with tab3:
-            st.markdown('<div style="font-size:0.9rem;font-family:Syne,sans-serif;font-weight:700;color:var(--text);margin-bottom:0.75rem;">Table 6.1 — Payment of Tax (Net Liability)</div>', unsafe_allow_html=True)
-            nc = "#FF6B6B" if data["net_cgst"] > 0 else "#00E5A0"
-            ns = "#FF6B6B" if data["net_sgst"] > 0 else "#00E5A0"
-            ni = "#FF6B6B" if data["net_igst"] > 0 else "#00E5A0"
-            nt = "#FF6B6B" if data["net_total"] > 0 else "#00E5A0"
-            st.markdown(f"""
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;">
-                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;
-                    background:var(--surface2);padding:0.75rem 1rem;font-family:'DM Mono',monospace;
-                    font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">
-                    <span>Description</span><span>CGST</span><span>SGST</span><span>IGST</span><span>Total</span>
-                </div>
-                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:0.75rem 1rem;border-top:1px solid var(--border);">
-                    <span>Output Tax Liability</span>
-                    <span style="color:#FF6B6B;">{fmt_inr(data['out_cgst'])}</span>
-                    <span style="color:#FF6B6B;">{fmt_inr(data['out_sgst'])}</span>
-                    <span style="color:#FF6B6B;">{fmt_inr(data['out_igst'])}</span>
-                    <span style="color:#FF6B6B;">{fmt_inr(data['out_cgst']+data['out_sgst']+data['out_igst'])}</span>
-                </div>
-                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:0.75rem 1rem;border-top:1px solid var(--border);">
-                    <span>Less: ITC Available</span>
-                    <span style="color:#00E5A0;">(−) {fmt_inr(data['itc_cgst'])}</span>
-                    <span style="color:#00E5A0;">(−) {fmt_inr(data['itc_sgst'])}</span>
-                    <span style="color:#00E5A0;">(−) {fmt_inr(data['itc_igst'])}</span>
-                    <span style="color:#00E5A0;">(−) {fmt_inr(data['itc_cgst']+data['itc_sgst']+data['itc_igst'])}</span>
-                </div>
-                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;
-                    padding:1rem;border-top:2px solid var(--border);background:var(--surface2);font-weight:700;font-size:1rem;">
-                    <span style="font-family:'Syne',sans-serif;font-weight:800;">NET TAX PAYABLE</span>
-                    <span style="color:{nc};font-size:1.1rem;">{fmt_inr(data['net_cgst'])}</span>
-                    <span style="color:{ns};font-size:1.1rem;">{fmt_inr(data['net_sgst'])}</span>
-                    <span style="color:{ni};font-size:1.1rem;">{fmt_inr(data['net_igst'])}</span>
-                    <span style="color:{nt};font-size:1.2rem;font-weight:800;">{fmt_inr(data['net_total'])}</span>
-                </div>
-            </div>
-            <div style="background:{'rgba(255,107,107,0.08)' if data['net_total']>0 else 'rgba(0,229,160,0.08)'};
-                border:1px solid {'rgba(255,107,107,0.3)' if data['net_total']>0 else 'rgba(0,229,160,0.3)'};
-                border-radius:10px;padding:1.25rem 1.5rem;">
-                <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:{nt};margin-bottom:0.4rem;">
-                    {'⚠️ You owe ₹' + f"{data['net_total']:,.2f}" + ' in GST' if data['net_total']>0
-                     else '✅ Excess ITC of ₹' + f"{abs(data['net_total']):,.2f}" + ' — carry forward'}
-                </div>
-                <div style="font-size:0.82rem;color:var(--muted);">
-                    Pay via GSTN portal under Electronic Cash Ledger by 20th of following month.
-                    Delay attracts 18% p.a. interest + ₹50/day late fee.
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        gstr3b_export = pd.DataFrame([
-            {"Section":"3.1(a)","Description":"Outward Taxable Supplies","Taxable":data['out_taxable'],"CGST":data['out_cgst'],"SGST":data['out_sgst'],"IGST":data['out_igst']},
-            {"Section":"4(A)(5)","Description":"ITC on Domestic Purchases","Taxable":data['itc_taxable'],"CGST":data['itc_cgst'],"SGST":data['itc_sgst'],"IGST":data['itc_igst']},
-            {"Section":"6.1","Description":"Net Tax Payable","Taxable":data['out_taxable']-data['itc_taxable'],"CGST":data['net_cgst'],"SGST":data['net_sgst'],"IGST":data['net_igst']},
-        ])
-        st.download_button("⬇️ Download GSTR-3B Summary CSV",
-            data=gstr3b_export.to_csv(index=False).encode(),
-            file_name=f"GSTR3B_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv", use_container_width=True)
-
-
-# ════════════════════════════════════════════════
-# GSTR-2A / GSTR-2B
-# ════════════════════════════════════════════════
-elif page == "GSTR-2A / 2B":
-    st.markdown('<div class="finflow-logo" style="font-size:1.6rem;margin-bottom:0.2rem;">GSTR-2A / 2B</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.25rem;">
-        <b style="color:var(--accent);">Inward Supplies ITC Statement</b> — Auto-populated from your suppliers' GSTR-1 filings
-    </p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
-        <div style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:1rem;">
-            <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);margin-bottom:0.4rem;">📡 GSTR-2A — Dynamic</div>
-            <div style="font-size:0.82rem;color:var(--muted);">Auto-populated in real-time as suppliers file GSTR-1. Changes when suppliers amend or file late.</div>
-        </div>
-        <div style="background:rgba(123,97,255,0.06);border:1px solid rgba(123,97,255,0.2);border-radius:10px;padding:1rem;">
-            <div style="font-family:'Syne',sans-serif;font-weight:700;color:#a89cff;margin-bottom:0.4rem;">🔒 GSTR-2B — Static / Locked</div>
-            <div style="font-size:0.82rem;color:var(--muted);">Locked snapshot of ITC available for a specific return period. Use this to claim ITC in GSTR-3B.</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    p_df = st.session_state.purchase_register
-    tab1, tab2, tab3, tab4 = st.tabs(["📡 GSTR-2A Data", "🔒 GSTR-2B (Static)", "🔍 Reconciliation", "➕ Add 2A Entry"])
-
-    with tab4:
-        st.markdown('<div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">Simulate supplier-filed entries (in production this pulls from GSTN API).</div>', unsafe_allow_html=True)
-        with st.form("add_2a_form"):
-            c1, c2 = st.columns(2)
-            with c1:
-                s_gstin  = st.text_input("Supplier GSTIN")
-                s_vendor = st.text_input("Supplier Name")
-                s_inv_no = st.text_input("Invoice Number")
-                s_date   = st.date_input("Invoice Date", value=date.today())
-            with c2:
-                s_taxable = st.number_input("Taxable Value (₹)", min_value=0.0, value=1000.0, step=1.0)
-                s_cgst    = st.number_input("CGST (₹)", min_value=0.0, value=90.0, step=0.01)
-                s_sgst    = st.number_input("SGST (₹)", min_value=0.0, value=90.0, step=0.01)
-                s_igst    = st.number_input("IGST (₹)", min_value=0.0, value=0.0, step=0.01)
-            s_total = s_taxable + s_cgst + s_sgst + s_igst
-            st.markdown(f"**Total: {fmt_inr(s_total)}**")
-            add_2a = st.form_submit_button("➕ Add to GSTR-2A", use_container_width=True)
-            if add_2a:
-                new_row = {"GSTIN":s_gstin,"Vendor":s_vendor,"InvoiceNo":s_inv_no,
-                           "Date":s_date.strftime("%d-%m-%Y"),"Taxable":s_taxable,
-                           "CGST":s_cgst,"SGST":s_sgst,"IGST":s_igst,"Total":s_total,
-                           "Source":"GSTR-2A (Supplier Filed)"}
-                st.session_state.gstr2a_data = pd.concat(
-                    [st.session_state.gstr2a_data, pd.DataFrame([new_row])], ignore_index=True)
-                st.success(f"✓ Entry from {s_vendor} added to GSTR-2A.")
-                st.rerun()
-
-    gstr2a_df, gstr2b_df, recon_df = build_gstr2a_2b(p_df, st.session_state.gstr2a_data)
-
-    with tab1:
-        if st.session_state.gstr2a_data.empty:
-            st.markdown("""<div style="background:var(--surface);border:1px dashed var(--border);border-radius:12px;
-                padding:3rem;text-align:center;">
-                <div style="font-size:2.5rem;">📡</div>
-                <div style="color:var(--muted);margin-top:0.75rem;">No GSTR-2A entries. Go to "Add 2A Entry" tab to simulate supplier data.</div>
-            </div>""", unsafe_allow_html=True)
-        else:
-            total_itc = (st.session_state.gstr2a_data["CGST"].astype(float).sum()
-                        + st.session_state.gstr2a_data["SGST"].astype(float).sum()
-                        + st.session_state.gstr2a_data["IGST"].astype(float).sum())
-            k1,k2,k3 = st.columns(3)
-            k1.markdown(f"""<div class="kpi-card"><div class="kpi-label">Suppliers Filed</div>
-                <div class="kpi-value">{st.session_state.gstr2a_data['GSTIN'].nunique()}</div></div>""", unsafe_allow_html=True)
-            k2.markdown(f"""<div class="kpi-card"><div class="kpi-label">Total Invoices (2A)</div>
-                <div class="kpi-value">{len(st.session_state.gstr2a_data)}</div></div>""", unsafe_allow_html=True)
-            k3.markdown(f"""<div class="kpi-card"><div class="kpi-label">ITC Available (2A)</div>
-                <div class="kpi-value" style="font-size:1.3rem;">{fmt_inr(total_itc)}</div></div>""", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-            disp = st.session_state.gstr2a_data.copy()
-            for c in ["Taxable","CGST","SGST","IGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
-            st.dataframe(disp, use_container_width=True, hide_index=True)
-            st.download_button("⬇️ Download GSTR-2A CSV",
-                data=st.session_state.gstr2a_data.to_csv(index=False).encode(),
-                file_name=f"GSTR2A_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv")
-
-    with tab2:
-        if gstr2b_df.empty:
-            st.markdown("""<div style="background:var(--surface);border:1px dashed var(--border);border-radius:12px;
-                padding:3rem;text-align:center;">
-                <div style="font-size:2.5rem;">🔒</div>
-                <div style="color:var(--muted);margin-top:0.75rem;">GSTR-2B generated after 2A data is available. Add entries in "Add 2A Entry" first.</div>
-            </div>""", unsafe_allow_html=True)
-        else:
-            itc_total = (gstr2b_df["CGST"].astype(float).sum() + gstr2b_df["SGST"].astype(float).sum()
-                        + gstr2b_df["IGST"].astype(float).sum())
-            st.markdown(f"""
-            <div style="background:rgba(123,97,255,0.08);border:1px solid rgba(123,97,255,0.25);border-radius:10px;
-                padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#a89cff;">
-                🔒 GSTR-2B snapshot — Locked ITC you can claim in GSTR-3B. Total claimable: <b>{fmt_inr(itc_total)}</b>
-            </div>""", unsafe_allow_html=True)
-            disp = gstr2b_df.copy()
-            for c in ["Taxable","CGST","SGST","IGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
-            st.dataframe(disp, use_container_width=True, hide_index=True)
-            st.download_button("⬇️ Download GSTR-2B CSV",
-                data=gstr2b_df.to_csv(index=False).encode(),
-                file_name=f"GSTR2B_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv")
-
-    with tab3:
-        st.markdown('<div style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">Match your Purchase Register vs GSTR-2A to identify claimable ITC.</div>', unsafe_allow_html=True)
-        if p_df.empty:
-            st.info("No purchase entries to reconcile.")
-        elif recon_df.empty:
-            st.info("Add 2A entries and purchase invoices to reconcile.")
-        else:
-            matched   = len(recon_df[recon_df["Status"] == "✅ Matched"])
-            mismatch  = len(recon_df[recon_df["Status"] == "❌ Amount Mismatch"])
-            not_in_2a = len(recon_df[recon_df["Status"] == "⚠️ Not in GSTR-2A"])
-            k1,k2,k3,k4 = st.columns(4)
-            k1.markdown(f"""<div class="kpi-card"><div class="kpi-label">Total Invoices</div><div class="kpi-value">{len(recon_df)}</div></div>""", unsafe_allow_html=True)
-            k2.markdown(f"""<div class="kpi-card" style="border-color:#00E5A033;"><div class="kpi-label" style="color:#00E5A0;">✅ Matched</div><div class="kpi-value" style="color:#00E5A0;">{matched}</div><div class="kpi-sub">ITC claimable</div></div>""", unsafe_allow_html=True)
-            k3.markdown(f"""<div class="kpi-card" style="border-color:#FF6B6B33;"><div class="kpi-label" style="color:#FF6B6B;">❌ Mismatch</div><div class="kpi-value" style="color:#FF6B6B;">{mismatch}</div><div class="kpi-sub">Needs correction</div></div>""", unsafe_allow_html=True)
-            k4.markdown(f"""<div class="kpi-card" style="border-color:#FFB54733;"><div class="kpi-label" style="color:#FFB547;">⚠️ Not in 2A</div><div class="kpi-value" style="color:#FFB547;">{not_in_2a}</div><div class="kpi-sub">Supplier not filed</div></div>""", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-            disp = recon_df.copy()
-            for c in ["Your CGST","Your IGST","2A CGST","2A IGST"]: disp[c] = disp[c].apply(fmt_inr)
-            st.dataframe(disp, use_container_width=True, hide_index=True)
-            st.markdown("""
-            <div style="background:var(--surface2);border-radius:10px;padding:1rem 1.25rem;margin-top:1rem;font-size:0.82rem;">
-                <div style="color:var(--text);font-weight:600;margin-bottom:0.5rem;">📌 Action Guide</div>
-                <div style="color:var(--muted);line-height:1.8;">
-                    <b style="color:#00E5A0;">✅ Matched</b> — Claim ITC in GSTR-3B Table 4.<br>
-                    <b style="color:#FF6B6B;">❌ Amount Mismatch</b> — Contact supplier to amend GSTR-1, or reverse ITC.<br>
-                    <b style="color:#FFB547;">⚠️ Not in GSTR-2A</b> — Supplier hasn't filed. Follow up before claiming ITC.
-                </div>
-            </div>""", unsafe_allow_html=True)
-            st.download_button("⬇️ Download Reconciliation Report CSV",
-                data=recon_df.to_csv(index=False).encode(),
-                file_name=f"GSTR2A_Recon_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv", use_container_width=True)
