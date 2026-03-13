@@ -4,6 +4,96 @@ import os
 import re
 from datetime import datetime, date
 from backend import *
+USERS = {
+    "admin": {
+        "password": "admin123",
+        "name": "Admin User",
+        "role": "Admin",
+        "color": "#00E5A0"
+    },
+    "accountant": {
+        "password": "acc123",
+        "name": "Ramesh Kumar",
+        "role": "Accountant",
+        "color": "#7B61FF"
+    },
+    "viewer": {
+        "password": "view123",
+        "name": "Priya Sharma",
+        "role": "Viewer",
+        "color": "#FFB547"
+    },
+}
+
+ROLE_ACCESS = {
+    "Admin":      ["Dashboard","Upload & Extract","Manual Entry","Purchase Register",
+                   "Sales Register","Reconciliation","GSTR-1 Report","GSTR-3B Report",
+                   "GSTR-2A / 2B","User Guide"],
+    "Accountant": ["Dashboard","Upload & Extract","Manual Entry","Purchase Register",
+                   "Sales Register","Reconciliation","GSTR-1 Report","GSTR-3B Report",
+                   "GSTR-2A / 2B","User Guide"],
+    "Viewer":     ["Dashboard","Purchase Register","Sales Register",
+                   "Reconciliation","GSTR-1 Report","GSTR-3B Report","User Guide"],
+}
+def show_login():
+    st.markdown("""
+    <style>
+    .login-wrap{
+        max-width:420px;margin:6rem auto 0;
+        background:var(--surface);border:1px solid var(--border);
+        border-radius:16px;padding:2.5rem 2rem;
+    }
+    .login-title{
+        font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;
+        background:linear-gradient(135deg,#00E5A0,#7B61FF);
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+        text-align:center;margin-bottom:0.3rem;
+    }
+    .login-sub{
+        text-align:center;color:var(--muted);
+        font-size:0.82rem;margin-bottom:2rem;
+        font-family:'DM Mono',monospace;letter-spacing:0.1em;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="login-wrap">', unsafe_allow_html=True)
+    st.markdown('<div class="login-title">FinFlow</div>', unsafe_allow_html=True)
+    st.markdown('<div class="login-sub">GST REGISTER · SIGN IN</div>', unsafe_allow_html=True)
+
+    with st.form("login_form"):
+        username = st.text_input("👤 Username", placeholder="Enter username")
+        password = st.text_input("🔒 Password", type="password", placeholder="Enter password")
+        submitted = st.form_submit_button("Sign In →", use_container_width=True)
+
+        if submitted:
+            username = username.strip().lower()
+            if username in USERS and USERS[username]["password"] == password:
+                # Save to session state
+                st.session_state.logged_in   = True
+                st.session_state.username    = username
+                st.session_state.user_name   = USERS[username]["name"]
+                st.session_state.user_role   = USERS[username]["role"]
+                st.session_state.user_color  = USERS[username]["color"]
+                st.session_state.page        = "Dashboard"
+                st.success(f"Welcome, {USERS[username]['name']}!")
+                st.rerun()
+            else:
+                st.error("❌ Invalid username or password.")
+
+    # Show demo credentials hint
+    st.markdown("""
+    <div style="margin-top:1.5rem;background:rgba(0,229,160,0.06);
+        border:1px solid rgba(0,229,160,0.2);border-radius:10px;
+        padding:0.9rem 1rem;font-size:0.78rem;font-family:'DM Mono',monospace;">
+        <div style="color:var(--accent);font-weight:600;margin-bottom:0.5rem;">DEMO CREDENTIALS</div>
+        <div style="color:var(--muted);">admin / admin123 &nbsp;·&nbsp; Admin</div>
+        <div style="color:var(--muted);">accountant / acc123 &nbsp;·&nbsp; Accountant</div>
+        <div style="color:var(--muted);">viewer / view123 &nbsp;·&nbsp; Viewer (read-only)</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.set_page_config(
     page_title="FinFlow · GST Register",
@@ -100,13 +190,21 @@ CATEGORIES = ["Goods"]
 # ── SESSION STATE ──
 def init_state():
     defaults = {
+        # ── ADD THESE NEW KEYS ──
+        "logged_in":   False,
+        "username":    "",
+        "user_name":   "",
+        "user_role":   "",
+        "user_color":  "#00E5A0",
+        # ── existing keys ──
         "page": "Dashboard",
         "purchase_register": pd.DataFrame(columns=COLS),
         "sales_register":    pd.DataFrame(columns=COLS),
         "counter": 1,
         "extracted": None,
         "inv_type_detected": "Purchase Invoice",
-        "gstr2a_data": pd.DataFrame(columns=["GSTIN","Vendor","InvoiceNo","Date","Taxable","CGST","SGST","IGST","Total","Source"]),
+        "gstr2a_data": pd.DataFrame(columns=["GSTIN","Vendor","InvoiceNo",
+                       "Date","Taxable","CGST","SGST","IGST","Total","Source"]),
         "lang": "English",
     }
     for k, v in defaults.items():
@@ -114,25 +212,67 @@ def init_state():
             st.session_state[k] = v
 
 init_state()
+# ── AUTH GATE ──
+if not st.session_state.logged_in:
+    show_login()
+    st.stop()   # ← stops rest of the file from running
 
 
 # ── SIDEBAR ──
 with st.sidebar:
+    # ── USER BADGE ──
+    role  = st.session_state.user_role
+    color = st.session_state.user_color
+    st.markdown(f"""
+    <div style="padding:0.9rem 1rem;background:var(--surface2);
+        border:1px solid var(--border);border-radius:10px;margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+            <div style="width:36px;height:36px;border-radius:50%;
+                background:linear-gradient(135deg,{color},{color}88);
+                display:flex;align-items:center;justify-content:center;
+                font-weight:800;font-size:1rem;color:#0A0C10;">
+                {st.session_state.user_name[0].upper()}
+            </div>
+            <div>
+                <div style="font-family:'Syne',sans-serif;font-weight:700;
+                    font-size:0.88rem;color:var(--text);">
+                    {st.session_state.user_name}
+                </div>
+                <div style="font-family:'DM Mono',monospace;font-size:0.68rem;
+                    color:{color};text-transform:uppercase;letter-spacing:0.1em;">
+                    {role}
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── LOGOUT ──
+    if st.button("🚪 Logout", key="logout_btn", use_container_width=True):
+        for key in ["logged_in","username","user_name","user_role","user_color"]:
+            st.session_state[key] = False if key == "logged_in" else ""
+        st.rerun()
+
+    st.markdown("---")
+
     st.markdown("""
     <div style="padding:1rem 0 1.5rem;">
         <div class="finflow-logo">FinFlow</div>
         <div class="finflow-tagline">GST Sales & Purchase Register</div>
     </div>
     """, unsafe_allow_html=True)
+
     st.markdown("---")
 
-    # Language toggle
+    # ── LANGUAGE TOGGLE ──
     lang = st.selectbox("🌐 Language / ಭಾಷೆ", ["English", "ಕನ್ನಡ"],
                         index=0 if st.session_state.lang == "English" else 1,
                         key="lang_select")
     st.session_state.lang = lang
+
     st.markdown("---")
 
+    # ── NAV BUTTONS ──
     KN = {
         "Dashboard": "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
         "Upload & Extract": "ಅಪ್‌ಲೋಡ್ & ಓದು",
@@ -146,24 +286,31 @@ with st.sidebar:
         "User Guide": "ಬಳಕೆದಾರ ಮಾರ್ಗದರ್ಶಿ",
     }
     pages = [
-        ("📊","Dashboard"),
-        ("📤","Upload & Extract"),
-        ("✏️","Manual Entry"),
-        ("📋","Purchase Register"),
-        ("💰","Sales Register"),
-        ("🔄","Reconciliation"),
-        ("📄","GSTR-1 Report"),
-        ("📑","GSTR-3B Report"),
-        ("🔍","GSTR-2A / 2B"),
-        ("📖","User Guide"),
+        ("📊", "Dashboard"),
+        ("📤", "Upload & Extract"),
+        ("✏️", "Manual Entry"),
+        ("📋", "Purchase Register"),
+        ("💰", "Sales Register"),
+        ("🔄", "Reconciliation"),
+        ("📄", "GSTR-1 Report"),
+        ("📑", "GSTR-3B Report"),
+        ("🔍", "GSTR-2A / 2B"),
+        ("📖", "User Guide"),
     ]
+
+    allowed = ROLE_ACCESS.get(st.session_state.user_role, [])
+
     for icon, name in pages:
+        if name not in allowed:
+            continue
         label = KN.get(name, name) if lang == "ಕನ್ನಡ" else name
         if st.button(f"{icon}  {label}", key=f"nav_{name}", use_container_width=True):
             st.session_state.page = name
             st.rerun()
 
     st.markdown("---")
+
+    # ── QUICK STATS (once, at the bottom) ──
     tx = get_tax_summary()
     st.markdown(f"""
     <div style="padding:0.75rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
@@ -184,7 +331,14 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 
+
+
 # ── PAGES ──
+page = st.session_state.page
+allowed = ROLE_ACCESS.get(st.session_state.user_role, [])
+if st.session_state.page not in allowed:
+    st.session_state.page = "Dashboard"
+
 page = st.session_state.page
 
 
@@ -313,7 +467,6 @@ if page == "Dashboard":
             <div style="font-size:0.75rem;color:{sc};margin-top:0.3rem;">{st_txt}</div>
             <div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem;">{desc}</div>
         </div>""", unsafe_allow_html=True)
-
 
 # ════════════════════════════════════════════════
 # UPLOAD & EXTRACT
