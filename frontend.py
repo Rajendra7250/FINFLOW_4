@@ -95,8 +95,7 @@ hr{border:none;border-top:1px solid var(--border);margin:1.5rem 0;}
 
 # ── CONSTANTS ──
 COLS = ["ID","Date","Vendor","GSTIN","Category","Subtotal","CGST","SGST","IGST","Total","Status"]
-CATEGORIES = ["Office Supplies","Travel & Transport","Food & Entertainment","Utilities",
-               "Rent","Professional Services","IT & Software","Marketing","Raw Materials","Miscellaneous"]
+CATEGORIES = ["none"]
 
 # ── SESSION STATE ──
 def init_state():
