@@ -7,22 +7,22 @@ from backend import *
 
 USERS = {
     "admin": {
-        "password": "admin123",
+        "password": "Admin@123",
         "name": "Admin User",
         "role": "Admin",
-        "color": "#5B8DEF"
+        "color": "#00E5A0"
     },
     "accountant": {
         "password": "acc123",
         "name": "Ramesh Kumar",
         "role": "Accountant",
-        "color": "#7B9E87"
+        "color": "#7B61FF"
     },
     "viewer": {
         "password": "view123",
         "name": "Priya Sharma",
         "role": "Viewer",
-        "color": "#C4A882"
+        "color": "#FFB547"
     },
 }
 
@@ -73,8 +73,6 @@ TR = {
     "Tax payable to government": "ಸರ್ಕಾರಕ್ಕೆ ತೆರಿಗೆ ಪಾವತಿಸಬೇಕು",
     "Input credit exceeds output tax": "ಇನ್‌ಪುಟ್ ಕ್ರೆಡಿಟ್ ಔಟ್‌ಪುಟ್ ತೆರಿಗೆಗಿಂತ ಹೆಚ್ಚಿದೆ",
     "Sales vs Purchases": "ಮಾರಾಟ vs ಖರೀದಿ",
-    "How net tax is calculated:": "ನಿವ್ವಳ ತೆರಿಗೆ ಹೇಗೆ ಲೆಕ್ಕ ಹಾಕಲಾಗುತ್ತದೆ:",
-    "Output Tax (on Sales) − Input Tax Credit (on Purchases) = Net GST Payable": "ಔಟ್‌ಪುಟ್ ತೆರಿಗೆ (ಮಾರಾಟದ ಮೇಲೆ) − ಇನ್‌ಪುಟ್ ತೆರಿಗೆ ಕ್ರೆಡಿಟ್ (ಖರೀದಿಯ ಮೇಲೆ) = ನಿವ್ವಳ GST",
     "Recent Activity": "ಇತ್ತೀಚಿನ ಚಟುವಟಿಕೆ",
     "GSTR Filing Status": "GSTR ಸಲ್ಲಿಕೆ ಸ್ಥಿತಿ",
     "Outward Supplies": "ಹೊರಮುಖ ಪೂರೈಕೆ",
@@ -103,7 +101,6 @@ TR = {
     "Invoice Type": "ಇನ್ವಾಯ್ಸ್ ವಿಧ",
     "Date": "ದಿನಾಂಕ",
     "GSTIN": "GSTIN",
-    "Subtotal": "ಉಪ ಮೊತ್ತ",
     "Calculated Total": "ಲೆಕ್ಕ ಹಾಕಿದ ಒಟ್ಟು",
     "Confirm & Add to Register": "ದೃಢಪಡಿಸಿ & ನೋಂದಣಿಗೆ ಸೇರಿಸಿ",
     "Upload a document and click Extract": "ದಾಖಲೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ ಮತ್ತು Extract ಕ್ಲಿಕ್ ಮಾಡಿ",
@@ -204,37 +201,23 @@ TR = {
     "Invalid username or password.": "ತಪ್ಪಾದ ಬಳಕೆದಾರ ಹೆಸರು ಅಥವಾ ಪಾಸ್‌ವರ್ಡ್.",
 
     # Upload & Extract form fields
-    "Invoice Type": "ಇನ್ವಾಯ್ಸ್ ವಿಧ",
     "Purchase Invoice": "ಖರೀದಿ ಇನ್ವಾಯ್ಸ್",
     "Sales Invoice": "ಮಾರಾಟ ಇನ್ವಾಯ್ಸ್",
     "Credit Note": "ಕ್ರೆಡಿಟ್ ನೋಟ್",
     "Debit Note": "ಡೆಬಿಟ್ ನೋಟ್",
     "Expense Receipt": "ವೆಚ್ಚದ ರಸೀದಿ",
-    "Date": "ದಿನಾಂಕ",
-    "GSTIN": "GSTIN",
     "Subtotal (₹)": "ಉಪ ಮೊತ್ತ (₹)",
     "CGST (₹)": "CGST (₹)",
     "SGST (₹)": "SGST (₹)",
-    "IGST (₹)": "IGST (₹)",
     "CGST %": "CGST %",
     "SGST %": "SGST %",
-    "IGST %": "IGST %",
     "Taxable Value (₹)": "ತೆರಿಗೆ ಮೌಲ್ಯ (₹)",
     "No GSTIN but GST charged — illegal. Cannot claim ITC. Request a corrected invoice.": "GSTIN ಇಲ್ಲದೆ GST ವಿಧಿಸಲಾಗಿದೆ — ಅಕ್ರಮ. ITC ಕ್ಲೇಮ್ ಮಾಡಲಾಗದು. ಸರಿಪಡಿಸಿದ ಇನ್ವಾಯ್ಸ್ ಕೇಳಿ.",
     "No GSTIN — Unregistered dealer. ITC cannot be claimed.": "GSTIN ಇಲ್ಲ — ನೋಂದಾಯಿಸಲ್ಪಡದ ವ್ಯಾಪಾರಿ. ITC ಕ್ಲೇಮ್ ಮಾಡಲಾಗದು.",
 
-    # Manual entry
-    "Vendor / Party Name": "ವ್ಯಾಪಾರಿ / ಪಾರ್ಟಿ ಹೆಸರು",
-
     # Metrics
-    "Input CGST (ITC)": "ಇನ್‌ಪುಟ್ CGST (ITC)",
-    "Input SGST (ITC)": "ಇನ್‌ಪುಟ್ SGST (ITC)",
-    "Output CGST": "ಔಟ್‌ಪುಟ್ CGST",
-    "Output SGST": "ಔಟ್‌ಪುಟ್ SGST",
-    "Entries": "ನಮೂದುಗಳು",
     "Search vendor": "ವ್ಯಾಪಾರಿ ಹುಡುಕಿ",
     "Search buyer": "ಖರೀದಿದಾರ ಹುಡುಕಿ",
-    "Export CSV": "CSV ರಫ್ತು",
 
     # Reconciliation messages
     "Net GST Payable to Government: ": "ಸರ್ಕಾರಕ್ಕೆ ನಿವ್ವಳ GST ಪಾವತಿಸಬೇಕು: ",
@@ -257,7 +240,6 @@ TR = {
 
     # GSTR-2A/2B
     "Simulate supplier-filed entries (in production this pulls from GSTN API).": "ಪೂರೈಕೆದಾರ-ಸಲ್ಲಿಸಿದ ನಮೂದುಗಳನ್ನು ಅನುಕರಿಸಿ (ಉತ್ಪಾದನೆಯಲ್ಲಿ GSTN API ನಿಂದ ತೆಗೆಯಲಾಗುತ್ತದೆ).",
-    "Invoice Date": "ಇನ್ವಾಯ್ಸ್ ದಿನಾಂಕ",
     "No GSTR-2A entries. Go to Add 2A Entry tab to simulate supplier data.": "GSTR-2A ನಮೂದುಗಳಿಲ್ಲ. ಪೂರೈಕೆದಾರ ಡೇಟಾ ಅನುಕರಿಸಲು 2A ನಮೂದು ಸೇರಿಸಿ ಟ್ಯಾಬ್‌ಗೆ ಹೋಗಿ.",
     "GSTR-2B is generated after 2A data is available. Add entries in Add 2A Entry first.": "2A ಡೇಟಾ ಲಭ್ಯವಾದ ನಂತರ GSTR-2B ರಚಿಸಲಾಗುತ್ತದೆ. ಮೊದಲು 2A ನಮೂದು ಸೇರಿಸಿ ನಲ್ಲಿ ನಮೂದಿಸಿ.",
     "GSTR-2B snapshot — Locked ITC claimable in GSTR-3B: ": "GSTR-2B ಸ್ನ್ಯಾಪ್‌ಶಾಟ್ — GSTR-3B ನಲ್ಲಿ ಕ್ಲೇಮ್ ಮಾಡಬಹುದಾದ ಲಾಕ್ ITC: ",
@@ -265,7 +247,6 @@ TR = {
     "No purchase entries to reconcile.": "ಹೊಂದಾಣಿಕೆ ಮಾಡಲು ಖರೀದಿ ನಮೂದುಗಳಿಲ್ಲ.",
     "Add 2A entries and purchase invoices to reconcile.": "ಹೊಂದಾಣಿಕೆ ಮಾಡಲು 2A ನಮೂದುಗಳು ಮತ್ತು ಖರೀದಿ ಇನ್ವಾಯ್ಸ್‌ಗಳನ್ನು ಸೇರಿಸಿ.",
     "Action Guide": "ಕ್ರಿಯಾ ಮಾರ್ಗದರ್ಶಿ",
-    "Matched": "ಹೊಂದಿದೆ",
     "Amount Mismatch": "ಮೊತ್ತ ಹೊಂದಿಲ್ಲ",
     "Supplier hasn't filed. Follow up before claiming ITC.": "ಪೂರೈಕೆದಾರರು ಸಲ್ಲಿಸಿಲ್ಲ. ITC ಕ್ಲೇಮ್ ಮಾಡುವ ಮೊದಲು ಅನುಸರಿಸಿ.",
     "Contact supplier to amend GSTR-1, or reverse ITC.": "GSTR-1 ತಿದ್ದುಪಡಿ ಮಾಡಲು ಪೂರೈಕೆದಾರರನ್ನು ಸಂಪರ್ಕಿಸಿ, ಅಥವಾ ITC ರಿವರ್ಸ್ ಮಾಡಿ.",
@@ -290,206 +271,115 @@ def T(key, lang=None):
     return key
 
 
-
 # ── GLOBAL STYLE ──
 STYLE = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
 
 :root {
-    --bg:       #12141A;
-    --surface:  #1A1D25;
-    --surface2: #20242E;
-    --border:   #2A2F3D;
-    --text:     #D4D8E2;
-    --muted:    #606880;
-    --blue:     #5B8DEF;
-    --green:    #4EA882;
-    --amber:    #C4913A;
-    --red:      #C4564A;
-    --purple:   #8B7EC8;
+    --bg:#0A0C10; --surface:#111318; --surface2:#181C24; --border:#1E2330;
+    --accent:#00E5A0; --accent2:#7B61FF; --text:#E8ECF4; --muted:#5A6075;
+    --success:#00E5A0; --warning:#FFB547; --danger:#FF6B6B;
 }
 
-html, body, [class*="css"] {
-    font-family: 'IBM Plex Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-}
-.stApp { background: var(--bg); }
-#MainMenu, footer { visibility: hidden; }
-.block-container { padding: 2.5rem 2rem 4rem; max-width: 1300px; }
+html,body,[class*="css"]{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);}
+.stApp{background:var(--bg);}
+#MainMenu,footer{visibility:hidden;}
+.block-container{padding:3.5rem 2.5rem 4rem;max-width:1400px;}
 
-[data-testid="stSidebar"] {
-    background: var(--surface) !important;
-    border-right: 1px solid var(--border);
+[data-testid="stSidebar"]{
+    background:var(--surface) !important;
+    border-right:1px solid var(--border);
 }
-[data-testid="collapsedControl"] { display: none !important; }
-
-.stButton > button {
-    background: var(--blue) !important;
-    color: #fff !important;
-    font-family: 'IBM Plex Sans', sans-serif !important;
-    font-weight: 500 !important;
-    border: none !important;
-    border-radius: 6px !important;
-    padding: 0.5rem 1.4rem !important;
-    box-shadow: none !important;
-    transition: background 0.15s !important;
+/* Always keep sidebar visible even if user tried to collapse it */
+[data-testid="stSidebar"][aria-expanded="false"]{
+    margin-left:0 !important;
+    visibility:visible !important;
 }
-.stButton > button:hover {
-    background: #4a7dd8 !important;
-    transform: none !important;
-    box-shadow: none !important;
+/* Hide the collapse/expand hamburger so users can't accidentally close it */
+[data-testid="collapsedControl"]{
+    display:none !important;
 }
 
-.stTextInput > div > div > input,
-.stNumberInput > div > div > input,
-.stSelectbox > div > div,
-.stTextArea > div > textarea {
-    background: var(--surface2) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 6px !important;
-    color: var(--text) !important;
-}
-label, .stSelectbox label, .stTextInput label {
-    color: var(--muted) !important;
-    font-size: 0.78rem !important;
-    font-family: 'IBM Plex Mono', monospace !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.08em !important;
-}
+.finflow-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:2.2rem;letter-spacing:-1px;
+background:linear-gradient(135deg,#00E5A0 0%,#7B61FF 100%);-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.finflow-tagline{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);
+letter-spacing:0.15em;text-transform:uppercase;margin-top:0.3rem;}
 
-.stTabs [data-baseweb="tab-list"] {
-    background: var(--surface) !important;
-    border-radius: 6px !important;
-    padding: 3px !important;
-    gap: 2px !important;
-    border: 1px solid var(--border) !important;
-}
-.stTabs [data-baseweb="tab"] {
-    background: transparent !important;
-    color: var(--muted) !important;
-    font-family: 'IBM Plex Sans', sans-serif !important;
-    font-weight: 500 !important;
-    border-radius: 5px !important;
-    border: none !important;
-    padding: 0.45rem 1.1rem !important;
-    font-size: 0.88rem !important;
-}
-.stTabs [aria-selected="true"] {
-    background: var(--surface2) !important;
-    color: var(--text) !important;
-    border: 1px solid var(--border) !important;
-}
+.section-header{font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem;color:var(--text);
+margin:1.5rem 0 1rem;display:flex;align-items:center;gap:0.6rem;}
+.section-header::after{content:'';flex:1;height:1px;background:var(--border);}
 
-[data-testid="stMetric"] {
-    background: var(--surface) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 8px !important;
-    padding: 1rem !important;
-}
-[data-testid="stMetricValue"] {
-    font-family: 'IBM Plex Mono', monospace !important;
-    color: var(--text) !important;
-}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+padding:1.2rem 1.5rem;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.kpi-label{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);
+text-transform:uppercase;letter-spacing:0.12em;margin-bottom:0.4rem;}
+.kpi-value{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;color:var(--text);}
+.kpi-sub{font-size:0.75rem;color:var(--muted);margin-top:0.2rem;}
 
-.stSuccess { background: rgba(78,168,130,0.08) !important; border-left: 3px solid var(--green) !important; border-radius: 6px !important; }
-.stError   { background: rgba(196,86,74,0.08)  !important; border-left: 3px solid var(--red)   !important; }
-.stWarning { background: rgba(196,145,58,0.08) !important; border-left: 3px solid var(--amber) !important; }
-.stInfo    { background: rgba(91,141,239,0.08) !important; border-left: 3px solid var(--blue)  !important; }
+.stButton>button{background:linear-gradient(135deg,#00E5A0,#00C88A) !important;
+color:#0A0C10 !important;font-family:'Syne',sans-serif !important;font-weight:700 !important;
+border:none !important;border-radius:8px !important;padding:0.6rem 1.6rem !important;
+box-shadow:0 4px 15px rgba(0,229,160,0.2) !important;transition:all 0.2s !important;}
+.stButton>button:hover{transform:translateY(-1px) !important;box-shadow:0 6px 20px rgba(0,229,160,0.35) !important;}
 
-hr { border: none; border-top: 1px solid var(--border); margin: 1.2rem 0; }
+.stTextInput>div>div>input,.stNumberInput>div>div>input,.stSelectbox>div>div,.stTextArea>div>textarea{
+background:var(--surface2) !important;border:1px solid var(--border) !important;
+border-radius:8px !important;color:var(--text) !important;}
+label,.stSelectbox label,.stTextInput label{color:var(--muted) !important;font-size:0.78rem !important;
+font-family:'DM Mono',monospace !important;text-transform:uppercase !important;letter-spacing:0.1em !important;}
 
-.stProgress > div > div { background: var(--blue) !important; border-radius: 4px !important; }
-.stProgress > div       { background: var(--surface2) !important; border-radius: 4px !important; }
+.stTabs [data-baseweb="tab-list"]{background:var(--surface) !important;border-radius:10px !important;
+padding:4px !important;gap:4px !important;border:1px solid var(--border) !important;}
+.stTabs [data-baseweb="tab"]{background:transparent !important;color:var(--muted) !important;
+font-family:'Syne',sans-serif !important;font-weight:600 !important;border-radius:7px !important;
+border:none !important;padding:0.5rem 1.2rem !important;}
+.stTabs [aria-selected="true"]{background:var(--surface2) !important;color:var(--accent) !important;
+border:1px solid var(--border) !important;}
 
-.page-title {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-weight: 600;
-    font-size: 1.4rem;
-    color: var(--text);
-    margin-bottom: 0.2rem;
-}
-.page-sub {
-    color: var(--muted);
-    font-size: 0.85rem;
-    margin-bottom: 1.5rem;
-}
-.section-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin: 1.2rem 0 0.6rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--border);
-}
-.kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-}
-.kpi-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.68rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.35rem;
-}
-.kpi-value {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 1.5rem;
-    font-weight: 500;
-    color: var(--text);
-}
-.kpi-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+[data-testid="stMetric"]{background:var(--surface) !important;border:1px solid var(--border) !important;
+border-radius:10px !important;padding:1rem !important;}
+[data-testid="stMetricValue"]{font-family:'Syne',sans-serif !important;color:var(--text) !important;}
 
-.info-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    font-size: 0.85rem;
-}
-.tag {
-    display: inline-block;
-    padding: 0.2rem 0.7rem;
-    border-radius: 4px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.74rem;
-    font-weight: 500;
-}
-.tag-green  { background: rgba(78,168,130,0.12); color: #4EA882; border: 1px solid rgba(78,168,130,0.3); }
-.tag-amber  { background: rgba(196,145,58,0.12);  color: #C4913A; border: 1px solid rgba(196,145,58,0.3); }
-.tag-red    { background: rgba(196,86,74,0.12);   color: #C4564A; border: 1px solid rgba(196,86,74,0.3); }
-.tag-blue   { background: rgba(91,141,239,0.12);  color: #5B8DEF; border: 1px solid rgba(91,141,239,0.3); }
-.tag-purple { background: rgba(139,126,200,0.12); color: #8B7EC8; border: 1px solid rgba(139,126,200,0.3); }
+.stSuccess{background:rgba(0,229,160,0.08) !important;border-left:3px solid var(--success) !important;border-radius:8px !important;}
+.stError{background:rgba(255,107,107,0.08) !important;border-left:3px solid var(--danger) !important;}
+.stWarning{background:rgba(255,181,71,0.08) !important;border-left:3px solid var(--warning) !important;}
+.stInfo{background:rgba(0,229,160,0.06) !important;border-left:3px solid var(--accent) !important;}
+hr{border:none;border-top:1px solid var(--border);margin:1.5rem 0;}
 
-/* Hamburger button — fixed top-left, styled dark */
+.stProgress>div>div{background:linear-gradient(90deg,var(--accent),var(--accent2)) !important;border-radius:100px !important;}
+.stProgress>div{background:var(--surface2) !important;border-radius:100px !important;}
+
+/* Legacy class aliases so existing page code still works */
+.page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;color:var(--text);margin-bottom:0.2rem;}
+.page-sub{color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem;}
+.section-label{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);text-transform:uppercase;
+letter-spacing:0.1em;margin:1.2rem 0 0.6rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border);}
+.info-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;font-size:0.85rem;}
+.tag{display:inline-block;padding:0.2rem 0.7rem;border-radius:100px;font-family:'DM Mono',monospace;font-size:0.74rem;font-weight:500;}
+.tag-green{background:rgba(0,229,160,0.12);color:#00E5A0;border:1px solid rgba(0,229,160,0.3);}
+.tag-amber{background:rgba(255,181,71,0.12);color:#FFB547;border:1px solid rgba(255,181,71,0.3);}
+.tag-red{background:rgba(255,107,107,0.12);color:#FF6B6B;border:1px solid rgba(255,107,107,0.3);}
+.tag-blue{background:rgba(123,97,255,0.12);color:#7B61FF;border:1px solid rgba(123,97,255,0.3);}
+.tag-purple{background:rgba(123,97,255,0.12);color:#7B61FF;border:1px solid rgba(123,97,255,0.3);}
+
+/* Hamburger button */
 div[data-testid="stButton"].hamburger-wrap > button {
-    position: fixed !important;
-    top: 12px !important;
-    left: 12px !important;
-    z-index: 10000 !important;
-    width: 40px !important;
-    height: 36px !important;
-    padding: 0 !important;
-    font-size: 1rem !important;
-    background: #20242E !important;
-    border: 1px solid #3A3F52 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important;
-    line-height: 1 !important;
-    color: #D4D8E2 !important;
+    position: fixed !important;top: 12px !important;left: 12px !important;
+    z-index: 10000 !important;width: 40px !important;height: 36px !important;
+    padding: 0 !important;font-size: 1rem !important;
+    background: #111318 !important;border: 1px solid #1E2330 !important;
+    border-radius: 8px !important;box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important;
+    line-height: 1 !important;color: #E8ECF4 !important;
     transition: background 0.15s, border-color 0.15s !important;
 }
 div[data-testid="stButton"].hamburger-wrap > button:hover {
-    background: #2A2F3D !important;
-    border-color: #5B8DEF !important;
+    background: #181C24 !important;border-color: #00E5A0 !important;
 }
+
 </style>
 """
 
@@ -498,50 +388,342 @@ def hamburger_btn():
     """Renders a fixed ☰/✕ button that toggles the sidebar overlay."""
     is_open = st.session_state.get("show_sidebar_overlay", False)
     icon = "✕" if is_open else "☰"
-    # Wrap in a container we can target with CSS
     st.markdown('<div class="hamburger-wrap" style="height:0;overflow:visible;">', unsafe_allow_html=True)
     if st.button(icon, key="hamburger"):
         st.session_state.show_sidebar_overlay = not is_open
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
+
+# ════════════════════════════════════════════════
+# LOGIN — animated card + password validation
+# ════════════════════════════════════════════════
 def show_login():
     st.markdown(STYLE, unsafe_allow_html=True)
     st.markdown("""
     <style>
+    /* ── Hide all Streamlit chrome on login ── */
+    #MainMenu, footer, header { visibility: hidden; }
+    [data-testid="stToolbar"]        { display: none !important; }
+    [data-testid="stSidebar"]        { display: none !important; }
+    [data-testid="collapsedControl"] { display: none !important; }
+
+    .block-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* ── Grid background ── */
+    [data-testid="stAppViewContainer"]::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* ── Radial glow ── */
+    [data-testid="stAppViewContainer"]::after {
+        content: '';
+        position: fixed;
+        top: 20%; left: 50%;
+        transform: translateX(-50%);
+        width: 600px; height: 400px;
+        background: radial-gradient(ellipse at center,
+            rgba(0,229,160,0.06) 0%,
+            rgba(123,97,255,0.04) 50%,
+            transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* ── Card ── */
+    .login-wrap {
+        position: relative;
+        z-index: 1;
+        width: 340px;
+        background: #111318;
+        border: 1px solid #1E2330;
+        border-radius: 20px;
+        padding: 2.8rem 2.2rem 2.4rem;
+        box-shadow:
+            0 0 0 1px rgba(0,229,160,0.04),
+            0 24px 60px rgba(0,0,0,0.6),
+            0 8px 20px rgba(0,0,0,0.4),
+            inset 0 1px 0 rgba(255,255,255,0.04);
+        animation: cardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes cardIn {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* top accent line */
+    .login-wrap::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 20%; right: 20%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #00E5A0, #7B61FF, transparent);
+        border-radius: 100px;
+    }
+
+    .login-mark {
+        width: 44px; height: 44px;
+        background: linear-gradient(135deg, #00E5A0, #7B61FF);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.2rem;
+        font-size: 1.3rem;
+        box-shadow: 0 4px 20px rgba(0,229,160,0.25);
+    }
     .login-title {
-        font-family: 'IBM Plex Sans', sans-serif;
-        font-weight: 600; font-size: 1.6rem;
-        color: var(--text); text-align: center; margin-bottom: 0.2rem;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800; font-size: 1.65rem;
+        background: linear-gradient(135deg, #E8ECF4 30%, #00E5A0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center; margin-bottom: 0.2rem; letter-spacing: -0.5px;
     }
     .login-sub {
-        text-align: center; color: var(--muted);
-        font-size: 0.78rem; margin-bottom: 2rem;
-        font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.1em;
+        text-align: center; color: #3A4055;
+        font-size: 0.72rem; margin-bottom: 2rem;
+        font-family: 'DM Mono', monospace;
+        letter-spacing: 0.18em; text-transform: uppercase;
     }
+
+    /* ── Inputs ── */
+    .login-wrap .stTextInput > div > div > input {
+        background: #0D0F14 !important;
+        border: 1px solid #252A38 !important;
+        border-radius: 10px !important;
+        color: #E8ECF4 !important;
+        font-size: 0.88rem !important;
+        padding: 0.65rem 0.9rem !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+    }
+    .login-wrap .stTextInput > div > div > input:focus {
+        border-color: #00E5A0 !important;
+        box-shadow: 0 0 0 3px rgba(0,229,160,0.1) !important;
+    }
+    [data-testid="InputInstructions"] {
+        display: none !important; visibility: hidden !important;
+        opacity: 0 !important; height: 0 !important; overflow: hidden !important;
+    }
+
+    /* ── Sign In button ── */
+    .login-wrap .stButton > button {
+        background: linear-gradient(135deg, #00E5A0, #00BD85) !important;
+        color: #060810 !important;
+        font-family: 'Syne', sans-serif !important;
+        font-weight: 700 !important; font-size: 0.92rem !important;
+        border: none !important; border-radius: 10px !important;
+        padding: 0.7rem 1.6rem !important; letter-spacing: 0.02em !important;
+        box-shadow: 0 4px 20px rgba(0,229,160,0.2) !important;
+        transition: all 0.2s !important; margin-top: 0.5rem !important;
+    }
+    .login-wrap .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 28px rgba(0,229,160,0.35) !important;
+    }
+
+    /* ── Password validation popup ── */
+    #pw-popup {
+        display: none; position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%) scale(0.92);
+        z-index: 99999;
+        background: #0E1118; border: 1px solid #1E2330; border-radius: 16px;
+        padding: 1.8rem 2rem; width: 300px;
+        box-shadow: 0 0 0 1px rgba(255,107,107,0.12), 0 24px 60px rgba(0,0,0,0.8);
+        animation: popIn 0.25s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    #pw-popup.show { display: block; }
+    @keyframes popIn {
+        from { opacity: 0; transform: translate(-50%, -50%) scale(0.88); }
+        to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    #pw-popup-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.55); z-index: 99998; backdrop-filter: blur(2px);
+    }
+    #pw-popup-overlay.show { display: block; }
+    #pw-popup-icon { font-size: 2rem; text-align: center; margin-bottom: 0.75rem; }
+    #pw-popup-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem;
+        color: #FF6B6B; text-align: center; margin-bottom: 0.5rem; }
+    #pw-popup-msg { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: #8A90A8;
+        text-align: center; line-height: 1.6; margin-bottom: 1.2rem; }
+    #pw-popup-msg strong { color: #FFB547; font-weight: 500; }
+    #pw-popup-close {
+        display: block; width: 100%; padding: 0.6rem;
+        background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.25);
+        border-radius: 8px; color: #FF6B6B;
+        font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.85rem;
+        cursor: pointer; transition: background 0.15s;
+    }
+    #pw-popup-close:hover { background: rgba(255,107,107,0.18); }
+
+    /* Eye-toggle button */
+    .pw-eye-btn {
+        position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+        background: none; border: none; cursor: pointer; padding: 4px 6px;
+        z-index: 99; display: flex; align-items: center; justify-content: center;
+        border-radius: 4px; transition: background 0.15s;
+    }
+    .pw-eye-btn:hover { background: rgba(255,255,255,0.05); }
     </style>
+
+    <!-- Password Popup HTML -->
+    <div id="pw-popup-overlay" onclick="closePwPopup()"></div>
+    <div id="pw-popup">
+        <div id="pw-popup-icon">🔐</div>
+        <div id="pw-popup-title">Weak Password</div>
+        <div id="pw-popup-msg"></div>
+        <button id="pw-popup-close" onclick="closePwPopup()">Got it</button>
+    </div>
+
+    <script>
+    function showPwPopup(message) {
+        document.getElementById('pw-popup-msg').innerHTML = message;
+        document.getElementById('pw-popup-overlay').classList.add('show');
+        document.getElementById('pw-popup').classList.add('show');
+    }
+    function closePwPopup() {
+        document.getElementById('pw-popup-overlay').classList.remove('show');
+        document.getElementById('pw-popup').classList.remove('show');
+    }
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closePwPopup(); });
+
+    // ── Intercept form submit and validate password ──
+    function attachPasswordValidator() {
+        const submitBtns = document.querySelectorAll('[data-testid="stFormSubmitButton"] button');
+        submitBtns.forEach(function(btn) {
+            if (btn.dataset.pwValidatorAttached) return;
+            btn.dataset.pwValidatorAttached = '1';
+            btn.addEventListener('click', function(e) {
+                const pwInput = document.querySelector(
+                    '[data-testid="stTextInput"] input[type="password"], ' +
+                    '[data-testid="stTextInput"] input[type="text"][data-eyeAttached]'
+                );
+                if (!pwInput) return;
+                const pw = pwInput.value;
+                let failMessage = null;
+                if (pw.length < 8) {
+                    failMessage = 'Password must be <strong>at least 8 characters</strong> long.';
+                } else if (!/[A-Z]/.test(pw)) {
+                    failMessage = 'Password must contain <strong>at least 1 uppercase letter</strong> (A-Z).';
+                } else if (!/[a-z]/.test(pw)) {
+                    failMessage = 'Password must contain <strong>at least 1 lowercase letter</strong> (a-z).';
+                } else if (!/[0-9]/.test(pw)) {
+                    failMessage = 'Password must contain <strong>at least 1 number</strong> (0-9).';
+                } else if (!/[^A-Za-z0-9]/.test(pw)) {
+                    failMessage = 'Password must contain <strong>at least 1 special character</strong> (e.g. @, #, $, !).';
+                }
+                if (failMessage) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    showPwPopup(failMessage);
+                }
+            }, true);
+        });
+    }
+
+    // ── Eye toggle ──
+    const EYE_OPEN  = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5A6075" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    const EYE_SLASH = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5A6075" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+    function attachEyeToggle() {
+        const inputs = document.querySelectorAll('[data-testid="stTextInput"] input[type="password"]');
+        inputs.forEach(function(input) {
+            if (input.dataset.eyeAttached) return;
+            input.dataset.eyeAttached = '1';
+            const wrapper = input.parentElement;
+            if (!wrapper) return;
+            wrapper.style.position = 'relative';
+            input.style.paddingRight = '2.5rem';
+            const stBtn = wrapper.querySelector('button');
+            if (stBtn) stBtn.style.display = 'none';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'pw-eye-btn';
+            btn.innerHTML = EYE_SLASH;
+            btn.title = 'Show password';
+            let isVisible = false;
+            btn.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                isVisible = !isVisible;
+                input.type = isVisible ? 'text' : 'password';
+                btn.innerHTML = isVisible ? EYE_OPEN : EYE_SLASH;
+                btn.title = isVisible ? 'Hide password' : 'Show password';
+            });
+            wrapper.appendChild(btn);
+        });
+    }
+
+    // MutationObserver to handle Streamlit async renders
+    const domObserver = new MutationObserver(function() {
+        attachEyeToggle();
+        attachPasswordValidator();
+    });
+    domObserver.observe(document.body, { childList: true, subtree: true });
+    setTimeout(attachEyeToggle, 300);
+    setTimeout(attachEyeToggle, 800);
+    setTimeout(attachPasswordValidator, 300);
+    setTimeout(attachPasswordValidator, 800);
+    </script>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="login-title">FinFlow</div>', unsafe_allow_html=True)
-    st.markdown('<div class="login-sub">GST REGISTER · SIGN IN</div>', unsafe_allow_html=True)
+    col_l, col_c, col_r = st.columns([1, 1.2, 1])
+    with col_c:
+        st.markdown('<div class="login-mark">💳</div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-title">FinFlow</div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-sub">GST Register · Sign In</div>', unsafe_allow_html=True)
 
-    with st.form("login_form"):
-        username = st.text_input(T("Username"), placeholder=T("Enter username"))
-        password = st.text_input(T("Password"), type="password", placeholder=T("Enter password"))
-        submitted = st.form_submit_button(T("Sign In"), use_container_width=True)
-        if submitted:
-            username = username.strip().lower()
-            if username in USERS and USERS[username]["password"] == password:
-                st.session_state.logged_in  = True
-                st.session_state.username   = username
-                st.session_state.user_name  = USERS[username]["name"]
-                st.session_state.user_role  = USERS[username]["role"]
-                st.session_state.user_color = USERS[username]["color"]
-                st.session_state.page       = "Dashboard"
-                st.success(f"Welcome, {USERS[username]['name']}!")
-                st.rerun()
-            else:
-                st.error(T("Invalid username or password."))
+        with st.form("login_form"):
+            username = st.text_input("Username", placeholder="Enter your username")
+            password = st.text_input("Password", type="password", placeholder="Enter your password")
+            submitted = st.form_submit_button("Sign In →", use_container_width=True)
+            if submitted:
+                uname = username.strip().lower()
+                # Server-side password validation (backup in case JS bypassed)
+                pw_error = None
+                import re as _re
+                if len(password) < 8:
+                    pw_error = "Password must be at least 8 characters long."
+                elif not _re.search(r'[A-Z]', password):
+                    pw_error = "Password must contain at least 1 uppercase letter (A-Z)."
+                elif not _re.search(r'[a-z]', password):
+                    pw_error = "Password must contain at least 1 lowercase letter (a-z)."
+                elif not _re.search(r'[0-9]', password):
+                    pw_error = "Password must contain at least 1 number (0-9)."
+                elif not _re.search(r'[^A-Za-z0-9]', password):
+                    pw_error = "Password must contain at least 1 special character (e.g. @, #, $, !)."
+
+                if pw_error:
+                    st.error(f"🔐 {pw_error}")
+                elif uname in USERS and USERS[uname]["password"] == password:
+                    st.session_state.logged_in  = True
+                    st.session_state.username   = uname
+                    st.session_state.user_name  = USERS[uname]["name"]
+                    st.session_state.user_role  = USERS[uname]["role"]
+                    st.session_state.user_color = USERS[uname]["color"]
+                    st.session_state.page       = "Dashboard"
+                    st.success(f"Welcome, {USERS[uname]['name']}!")
+                    st.rerun()
+                else:
+                    st.error("❌ Invalid username or password.")
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 st.set_page_config(
@@ -553,7 +735,7 @@ st.set_page_config(
 
 st.markdown(STYLE, unsafe_allow_html=True)
 
-COLS = ["ID","Date","Vendor","GSTIN","Subtotal","CGST","SGST","IGST","Total","Status"]
+COLS = ["ID","Date","Vendor","GSTIN","Subtotal","CGST","SGST","Total","Status"]
 
 def init_state():
     defaults = {
@@ -565,7 +747,7 @@ def init_state():
         "counter": 1, "extracted": None,
         "inv_type_detected": "Purchase Invoice",
         "gstr2a_data": pd.DataFrame(columns=["GSTIN","Vendor","InvoiceNo",
-                       "Date","Taxable","CGST","SGST","IGST","Total","Source"]),
+                       "Date","Taxable","CGST","SGST","Total","Source"]),
         "lang": "English",
         "show_sidebar_overlay": False,
     }
@@ -580,13 +762,10 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ── SIDEBAR VISIBILITY ──
-# Sidebar is always "expanded" via set_page_config so Streamlit renders it.
-# We control visibility purely with CSS — no JS fighting needed.
 _page_is_dash = st.session_state.page == "Dashboard"
 _overlay_open = st.session_state.get("show_sidebar_overlay", False)
 
 if _page_is_dash:
-    # Dashboard: sidebar sits inline, always visible, no toggle button
     st.markdown("""
     <style>
     [data-testid="collapsedControl"] { display: none !important; }
@@ -600,7 +779,6 @@ if _page_is_dash:
     </style>
     """, unsafe_allow_html=True)
 elif _overlay_open:
-    # Other pages, drawer open: sidebar floats over content
     st.markdown("""
     <style>
     [data-testid="collapsedControl"] { display: none !important; }
@@ -615,7 +793,6 @@ elif _overlay_open:
         box-shadow: 8px 0 32px rgba(0,0,0,0.8) !important;
         overflow-y: auto;
     }
-    /* dim the main area behind the drawer */
     [data-testid="stAppViewContainer"] > section:last-child {
         filter: brightness(0.4);
         pointer-events: none;
@@ -623,7 +800,6 @@ elif _overlay_open:
     </style>
     """, unsafe_allow_html=True)
 else:
-    # Other pages, drawer closed: completely hidden
     st.markdown("""
     <style>
     [data-testid="collapsedControl"] { display: none !important; }
@@ -752,7 +928,6 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 
-
 # ── PAGE ROUTING ──
 page = st.session_state.page
 allowed = ROLE_ACCESS.get(st.session_state.user_role, [])
@@ -797,7 +972,6 @@ if page == "Dashboard":
         rows = [
             ("CGST", tx['p_cgst'], tx['s_cgst'], tx['net_cgst']),
             ("SGST", tx['p_sgst'], tx['s_sgst'], tx['net_sgst']),
-            ("IGST", tx['p_igst'], tx['s_igst'], tx['net_igst']),
         ]
         header = """
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr;
@@ -826,8 +1000,8 @@ if page == "Dashboard":
             border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px;
             font-size:0.88rem; font-weight:600;">
             <span>Total</span>
-            <span style="color:var(--amber);">₹{tx['p_cgst']+tx['p_sgst']+tx['p_igst']:,.2f}</span>
-            <span style="color:var(--green);">₹{tx['s_cgst']+tx['s_sgst']+tx['s_igst']:,.2f}</span>
+            <span style="color:var(--amber);">₹{tx['p_cgst']+tx['p_sgst']:,.2f}</span>
+            <span style="color:var(--green);">₹{tx['s_cgst']+tx['s_sgst']:,.2f}</span>
             <span style="color:{total_color}; font-family:'IBM Plex Mono',monospace;">₹{tx['net_tax']:,.2f}</span>
         </div>"""
         st.markdown(header + body + footer, unsafe_allow_html=True)
@@ -887,7 +1061,6 @@ elif page == "Upload & Extract":
     col1, col2 = st.columns([1.1, 0.9])
 
     with col1:
-        # Inject CSS to overlay Kannada text on the native file uploader widget
         if st.session_state.get("lang") == "ಕನ್ನಡ":
             st.markdown("""
             <style>
@@ -952,7 +1125,7 @@ elif page == "Upload & Extract":
                 st.progress(conf / 100)
 
                 if not ext_data.get("gstin"):
-                    has_tax = (ext_data.get("cgst",0) > 0 or ext_data.get("sgst",0) > 0 or ext_data.get("igst",0) > 0)
+                    has_tax = (ext_data.get("cgst",0) > 0 or ext_data.get("sgst",0) > 0)
                     if has_tax:
                         st.error(T("No GSTIN but GST charged — illegal. Cannot claim ITC. Request a corrected invoice."))
                     else:
@@ -961,7 +1134,7 @@ elif page == "Upload & Extract":
                 extracted_df = pd.DataFrame({
                     T("Field"): [
                         T("Vendor / Party"), T("Invoice Type"), T("Date"), T("GSTIN"),
-                        T("Subtotal"), T("CGST (₹)"), T("SGST (₹)"), T("IGST (₹)"), T("Total"),
+                        T("Subtotal"), T("CGST (₹)"), T("SGST (₹)"), T("Total"),
                     ],
                     T("Value"): [
                         ext_data.get('vendor', ''),
@@ -971,7 +1144,6 @@ elif page == "Upload & Extract":
                         f"₹{ext_data.get('subtotal', 0):,.2f}",
                         f"₹{ext_data.get('cgst', 0):,.2f}",
                         f"₹{ext_data.get('sgst', 0):,.2f}",
-                        f"₹{ext_data.get('igst', 0):,.2f}",
                         f"₹{ext_data.get('total', 0):,.2f}",
                     ]
                 })
@@ -994,8 +1166,7 @@ elif page == "Upload & Extract":
                     cgst     = st.number_input(T("CGST (₹)"), value=float(ext_data.get("cgst",0)), min_value=0.0, step=0.01)
                 with c2:
                     sgst  = st.number_input(T("SGST (₹)"), value=float(ext_data.get("sgst",0)), min_value=0.0, step=0.01)
-                    igst  = st.number_input(T("IGST (₹)"), value=float(ext_data.get("igst",0)), min_value=0.0, step=0.01)
-                total_calc = subtotal + cgst + sgst + igst
+                total_calc = subtotal + cgst + sgst
                 st.markdown(f"""
                 <div class="info-box" style="display:flex; justify-content:space-between; margin:0.5rem 0;">
                     <span style="color:var(--muted); font-size:0.85rem;">{T("Calculated Total")}</span>
@@ -1004,15 +1175,15 @@ elif page == "Upload & Extract":
                 submitted = st.form_submit_button(T("Confirm & Add to Register"), use_container_width=True)
                 if submitted:
                     data = {"vendor":vendor,"date":txn_date,"gstin":gstin,
-                            "subtotal":subtotal,"cgst":cgst,"sgst":sgst,"igst":igst,"total":total_calc}
+                            "subtotal":subtotal,"cgst":cgst,"sgst":sgst,"igst":0,"total":total_calc}
                     txn_id, reg = add_to_register(data, doc_type)
                     st.session_state.extracted = None
                     reg_name = "Sales Register" if "sales" in reg else "Purchase Register"
                     st.success(f"{txn_id} added to {reg_name}.")
         else:
-            st.markdown("""
+            st.markdown(f"""
             <div class="info-box" style="text-align:center; padding:3rem 2rem; color:var(--muted);">
-                Upload a document and click Extract
+                {T("Upload a document and click Extract")}
             </div>""", unsafe_allow_html=True)
 
 
@@ -1037,17 +1208,14 @@ elif page == "Manual Entry":
                 cgst_pct = st.number_input(T("CGST %"), min_value=0.0, max_value=28.0, value=9.0, step=0.5)
             with c2:
                 sgst_pct = st.number_input(T("SGST %"), min_value=0.0, max_value=28.0, value=9.0, step=0.5)
-                igst_pct = st.number_input(T("IGST %"), min_value=0.0, max_value=28.0, value=0.0, step=0.5)
             cgst  = round(subtotal * cgst_pct / 100, 2)
             sgst  = round(subtotal * sgst_pct / 100, 2)
-            igst  = round(subtotal * igst_pct / 100, 2)
-            total = subtotal + cgst + sgst + igst
+            total = subtotal + cgst + sgst
             st.markdown(f"""
             <div class="info-box" style="margin:0.5rem 0;">
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; font-size:0.84rem; margin-bottom:0.5rem;">
                     <span style="color:var(--muted);">{T('CGST %')[:4]}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace;">₹{cgst:,.2f}</span>
                     <span style="color:var(--muted);">{T('SGST %')[:4]}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace;">₹{sgst:,.2f}</span>
-                    <span style="color:var(--muted);">{T('IGST %')[:4]}</span><span style="text-align:right; font-family:'IBM Plex Mono',monospace;">₹{igst:,.2f}</span>
                 </div>
                 <div style="border-top:1px solid var(--border); padding-top:0.4rem;
                     display:flex; justify-content:space-between;">
@@ -1061,7 +1229,7 @@ elif page == "Manual Entry":
                     st.error(T("Vendor name is required."))
                 else:
                     data = {"vendor":vendor,"date":txn_date.strftime("%d-%m-%Y"),"gstin":gstin,
-                            "subtotal":subtotal,"cgst":cgst,"sgst":sgst,"igst":igst,"total":total}
+                            "subtotal":subtotal,"cgst":cgst,"sgst":sgst,"igst":0,"total":total}
                     txn_id, reg = add_to_register(data, doc_type)
                     reg_name = "Sales Register" if "sales" in reg else "Purchase Register"
                     st.success(f"{txn_id} added to {reg_name}.")
@@ -1103,7 +1271,7 @@ elif page == "Purchase Register":
         if search:
             df = df[df["Vendor"].str.contains(search, case=False, na=False)]
         disp = df.copy()
-        for col in ["Subtotal","CGST","SGST","IGST","Total"]:
+        for col in ["Subtotal","CGST","SGST","Total"]:
             disp[col] = disp[col].apply(lambda x: f"₹{float(x):,.2f}")
         st.dataframe(disp, use_container_width=True, hide_index=True, height=400)
         st.download_button(T("Export CSV"),
@@ -1134,7 +1302,7 @@ elif page == "Sales Register":
         if search:
             df = df[df["Vendor"].str.contains(search, case=False, na=False)]
         disp = df.copy()
-        for col in ["Subtotal","CGST","SGST","IGST","Total"]:
+        for col in ["Subtotal","CGST","SGST","Total"]:
             disp[col] = disp[col].apply(lambda x: f"₹{float(x):,.2f}")
         st.dataframe(disp, use_container_width=True, hide_index=True, height=400)
         st.download_button(T("Export CSV"),
@@ -1162,7 +1330,6 @@ elif page == "Reconciliation":
         rows = [
             ("CGST", tx['p_cgst'], tx['s_cgst'], tx['net_cgst']),
             ("SGST", tx['p_sgst'], tx['s_sgst'], tx['net_sgst']),
-            ("IGST", tx['p_igst'], tx['s_igst'], tx['net_igst']),
         ]
         header = """
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr;
@@ -1190,8 +1357,8 @@ elif page == "Reconciliation":
             border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px;
             font-size:0.88rem; font-weight:600; margin-bottom:1rem;">
             <span>Total</span>
-            <span style="color:var(--amber);">₹{tx['p_cgst']+tx['p_sgst']+tx['p_igst']:,.2f}</span>
-            <span style="color:var(--green);">₹{tx['s_cgst']+tx['s_sgst']+tx['s_igst']:,.2f}</span>
+            <span style="color:var(--amber);">₹{tx['p_cgst']+tx['p_sgst']:,.2f}</span>
+            <span style="color:var(--green);">₹{tx['s_cgst']+tx['s_sgst']:,.2f}</span>
             <span style="color:{tc}; font-family:'IBM Plex Mono',monospace;">₹{tx['net_tax']:,.2f}</span>
         </div>"""
         st.markdown(header + body + footer, unsafe_allow_html=True)
@@ -1223,75 +1390,87 @@ elif page == "Reconciliation":
 # ════════════════════════════════════════════════
 elif page == "GSTR-1 Report":
     hamburger_btn()
-    st.markdown(f'<div class="page-title">{T("GSTR-1 — Statement of Outward Supplies")}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="page-sub">{T("Filed by 11th of the following month. B2B invoices auto-appear in buyer's GSTR-2A.")}</div>', unsafe_allow_html=True)
+    st.markdown('<div class="finflow-logo" style="font-size:1.6rem;margin-bottom:0.2rem;">GSTR-1</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.25rem;">
+        <b style="color:var(--accent);">Statement of Outward Supplies</b> — Filed by 11th of following month
+    </p>
+    <div style="background:rgba(123,97,255,0.08);border:1px solid rgba(123,97,255,0.25);border-radius:8px;
+        padding:0.6rem 1rem;margin-bottom:1.5rem;font-size:0.82rem;color:#a89cff;">
+        ℹ️ GSTR-1 reports all outward (sales) supplies. B2B invoices auto-appear in buyer's GSTR-2A.
+    </div>
+    """, unsafe_allow_html=True)
 
     s_df = st.session_state.sales_register
 
     if s_df.empty:
-        st.info(T("No sales data. Add sales invoices to generate GSTR-1."))
+        st.markdown("""<div style="background:var(--surface);border:1px dashed var(--border);border-radius:16px;
+            padding:4rem;text-align:center;">
+            <div style="font-size:3rem;">📄</div>
+            <div style="color:var(--muted);margin-top:0.75rem;">No sales data. Add sales invoices to generate GSTR-1.</div>
+        </div>""", unsafe_allow_html=True)
     else:
         summary, b2b_df, b2c_df = build_gstr1(s_df)
 
-        k1, k2, k3, k4, k5 = st.columns(5)
+        k1, k2, k3, k4 = st.columns(4)
         for col, label, val, sub in [
-            (k1, T("Taxable Turnover"), f"₹{summary['total_taxable']:,.2f}", ""),
-            (k2, "Total CGST",       f"₹{summary['total_cgst']:,.2f}",    ""),
-            (k3, "Total SGST",       f"₹{summary['total_sgst']:,.2f}",    ""),
-            (k4, "Total IGST",       f"₹{summary['total_igst']:,.2f}",    ""),
-            (k5, T("Grand Total"),      f"₹{summary['grand_total']:,.2f}",   f"{len(s_df)} invoices"),
+            (k1, "Taxable Turnover",    f"₹{summary['total_taxable']:,.2f}", ""),
+            (k2, "Total CGST (Output)", f"₹{summary['total_cgst']:,.2f}",    ""),
+            (k3, "Total SGST (Output)", f"₹{summary['total_sgst']:,.2f}",    ""),
+            (k4, "Grand Total",         f"₹{summary['grand_total']:,.2f}",   f"{len(s_df)} invoices"),
         ]:
-            col.markdown(f"""
-            <div class="kpi-card">
+            col.markdown(f"""<div class="kpi-card">
                 <div class="kpi-label">{label}</div>
-                <div class="kpi-value" style="font-size:1.1rem;">{val}</div>
+                <div class="kpi-value" style="font-size:1.2rem;">{val}</div>
                 <div class="kpi-sub">{sub}</div>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        tab1, tab2, tab3, tab4 = st.tabs([T("B2B Invoices"), T("B2C Invoices"), T("HSN Summary"), T("Full Table")])
+        tab1, tab2, tab3, tab4 = st.tabs(["📦 B2B Invoices", "🛒 B2C Invoices", "📊 HSN Summary", "📋 Full Table"])
 
         with tab1:
-            st.caption(T("B2B invoices (with GSTIN) — auto-appear in buyer's GSTR-2A."))
+            st.markdown('<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">B2B invoices (with GSTIN) — auto-appear in buyer\'s GSTR-2A.</div>', unsafe_allow_html=True)
             if b2b_df.empty:
-                st.info(T("No B2B invoices (no entries with GSTIN)."))
+                st.info("No B2B invoices (no entries with GSTIN).")
             else:
-                disp = b2b_df[["ID","Date","Vendor","GSTIN","Subtotal","CGST","SGST","IGST","Total"]].copy()
-                for c in ["Subtotal","CGST","SGST","IGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
+                disp = b2b_df[["ID","Date","Vendor","GSTIN","Subtotal","CGST","SGST","Total"]].copy()
+                for c in ["Subtotal","CGST","SGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
                 st.dataframe(disp, use_container_width=True, hide_index=True)
+                total_tax = b2b_df["CGST"].astype(float).sum() + b2b_df["SGST"].astype(float).sum()
+                st.markdown(f'<div style="background:rgba(0,229,160,0.06);border-radius:8px;padding:0.5rem 1rem;font-size:0.82rem;color:var(--muted);">{len(b2b_df)} B2B invoice(s) · Taxable: {fmt_inr(b2b_df["Subtotal"].astype(float).sum())} · Tax: {fmt_inr(total_tax)}</div>', unsafe_allow_html=True)
 
         with tab2:
-            st.caption(T("B2C invoices (no GSTIN) — buyer cannot claim ITC."))
+            st.markdown('<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">B2C invoices (no GSTIN) — buyer cannot claim ITC.</div>', unsafe_allow_html=True)
             if b2c_df.empty:
-                st.info(T("No B2C invoices."))
+                st.info("No B2C invoices.")
             else:
-                disp = b2c_df[["ID","Date","Vendor","Subtotal","CGST","SGST","IGST","Total"]].copy()
-                for c in ["Subtotal","CGST","SGST","IGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
+                disp = b2c_df[["ID","Date","Vendor","Subtotal","CGST","SGST","Total"]].copy()
+                for c in ["Subtotal","CGST","SGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
                 st.dataframe(disp, use_container_width=True, hide_index=True)
 
         with tab3:
-            st.caption(T("Invoice summary (HSN/SAC grouping)."))
+            st.markdown('<div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Invoice summary (HSN/SAC grouping).</div>', unsafe_allow_html=True)
             hsn = pd.DataFrame({
                 "Invoices": [len(s_df)],
                 "Taxable":  [s_df["Subtotal"].astype(float).sum()],
                 "CGST":     [s_df["CGST"].astype(float).sum()],
                 "SGST":     [s_df["SGST"].astype(float).sum()],
-                "IGST":     [s_df["IGST"].astype(float).sum()],
                 "Total":    [s_df["Total"].astype(float).sum()],
             })
-            for c in ["Taxable","CGST","SGST","IGST","Total"]: hsn[c] = hsn[c].apply(fmt_inr)
+            for c in ["Taxable","CGST","SGST","Total"]: hsn[c] = hsn[c].apply(fmt_inr)
             st.dataframe(hsn, use_container_width=True, hide_index=True)
 
         with tab4:
             disp = s_df.copy()
-            for c in ["Subtotal","CGST","SGST","IGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
+            for c in ["Subtotal","CGST","SGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
             st.dataframe(disp, use_container_width=True, hide_index=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.download_button(T("Download GSTR-1 CSV"),
+        st.download_button("⬇️ Download GSTR-1 CSV",
             data=s_df.to_csv(index=False).encode(),
             file_name=f"GSTR1_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv", use_container_width=True)
+
 
 
 # ════════════════════════════════════════════════
@@ -1299,131 +1478,126 @@ elif page == "GSTR-1 Report":
 # ════════════════════════════════════════════════
 elif page == "GSTR-3B Report":
     hamburger_btn()
-    st.markdown(f'<div class="page-title">{T("GSTR-3B — Monthly Summary Return")}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="page-sub">{T("Filed by 20th of the following month. Output tax − ITC = Net tax payable.")}</div>', unsafe_allow_html=True)
-    st.info(T("GSTR-3B is a self-declaration. Interest at 18% p.a. applies on late payment."))
+    st.markdown('<div class="finflow-logo" style="font-size:1.6rem;margin-bottom:0.2rem;">GSTR-3B</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.25rem;">
+        <b style="color:var(--accent);">Monthly Summary Return</b> — Filed by 20th of following month
+    </p>
+    <div style="background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.2);border-radius:8px;
+        padding:0.6rem 1rem;margin-bottom:1.5rem;font-size:0.82rem;color:#ff9a9a;">
+        ⚠️ GSTR-3B is a self-declaration. Output tax − ITC = Net tax payable. Interest applies on late payment.
+    </div>
+    """, unsafe_allow_html=True)
 
     s_df = st.session_state.sales_register
     p_df = st.session_state.purchase_register
 
     if s_df.empty and p_df.empty:
-        st.info(T("Add sales and purchase entries to generate GSTR-3B."))
+        st.info("Add sales and purchase entries to generate GSTR-3B.")
     else:
         data = build_gstr3b(s_df, p_df)
-        tab1, tab2, tab3 = st.tabs([T("3.1 Output Tax"), T("4. ITC Available"), T("Net Tax Payable")])
+        tab1, tab2, tab3 = st.tabs(["📋 3.1 Output Tax", "📥 4. ITC Available", "💰 Net Tax Payable"])
 
-        def tax_grid(title, rows, totals):
-            header = f"""
-            <div style="font-weight:600; font-size:0.9rem; margin-bottom:0.75rem; color:var(--text);">{title}</div>
-            <div style="display:grid; grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr 1fr;
-                padding:0.5rem 0.75rem; background:var(--surface2); border-radius:6px 6px 0 0;
-                border:1px solid var(--border); border-bottom:none;
-                font-family:'IBM Plex Mono',monospace; font-size:0.65rem;
-                color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;">
-                <span>Sec</span><span>Nature</span><span>Taxable</span><span>CGST</span><span>SGST</span><span>IGST</span>
+        def _grid_row(r, color="var(--text)"):
+            return (f'<div style="display:grid;grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr;'
+                    f'padding:0.75rem 1rem;border-top:1px solid var(--border);font-size:0.85rem;">'
+                    f'<span style="font-family:DM Mono,monospace;color:var(--muted);font-size:0.75rem;">{r[0]}</span>'
+                    f'<span>{r[1]}</span>'
+                    f'<span style="color:{color};">{fmt_inr(r[2])}</span>'
+                    f'<span>{fmt_inr(r[3])}</span><span>{fmt_inr(r[4])}</span><span>{fmt_inr(r[5])}</span></div>')
+
+        def tax_table(title, rows, total_row, total_color="var(--accent)"):
+            hdr = f"""<div style="font-size:0.9rem;font-family:Syne,sans-serif;font-weight:700;color:var(--text);margin-bottom:0.75rem;">{title}</div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+            <div style="display:grid;grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr;background:var(--surface2);
+                padding:0.75rem 1rem;font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);
+                text-transform:uppercase;letter-spacing:0.08em;">
+                <span>Section</span><span>Nature</span><span>Taxable</span><span>CGST</span><span>SGST</span>
             </div>"""
-            body = "".join([
-                f'<div style="display:grid; grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr 1fr;'
-                f'padding:0.5rem 0.75rem; border:1px solid var(--border); border-top:none; font-size:0.82rem;">'
-                f'<span style="font-family:\'IBM Plex Mono\',monospace; color:var(--muted); font-size:0.72rem;">{r[0]}</span>'
-                f'<span>{r[1]}</span>'
-                f'<span style="font-family:\'IBM Plex Mono\',monospace;">{fmt_inr(r[2])}</span>'
-                f'<span style="font-family:\'IBM Plex Mono\',monospace;">{fmt_inr(r[3])}</span>'
-                f'<span style="font-family:\'IBM Plex Mono\',monospace;">{fmt_inr(r[4])}</span>'
-                f'<span style="font-family:\'IBM Plex Mono\',monospace;">{fmt_inr(r[5])}</span>'
-                f'</div>'
-                for r in rows
-            ])
-            footer = (
-                f'<div style="display:grid; grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr 1fr;'
-                f'padding:0.6rem 0.75rem; background:var(--surface2); font-weight:600;'
-                f'border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; font-size:0.84rem;">'
-                f'<span></span><span>{totals[0]}</span>'
-                f'<span style="font-family:\'IBM Plex Mono\',monospace;">{fmt_inr(totals[1])}</span>'
-                f'<span style="font-family:\'IBM Plex Mono\',monospace;">{fmt_inr(totals[2])}</span>'
-                f'<span style="font-family:\'IBM Plex Mono\',monospace;">{fmt_inr(totals[3])}</span>'
-                f'<span style="font-family:\'IBM Plex Mono\',monospace;">{fmt_inr(totals[4])}</span>'
-                f'</div>'
-            )
-            return header + body + footer
+            body = "".join([_grid_row(r) for r in rows])
+            foot = (f'<div style="display:grid;grid-template-columns:0.5fr 2.5fr 1fr 1fr 1fr;'
+                    f'padding:0.75rem 1rem;border-top:2px solid var(--border);background:var(--surface2);font-weight:700;">'
+                    f'<span></span><span>{total_row[0]}</span>'
+                    f'<span style="color:{total_color};">{fmt_inr(total_row[1])}</span>'
+                    f'<span style="color:{total_color};">{fmt_inr(total_row[2])}</span>'
+                    f'<span style="color:{total_color};">{fmt_inr(total_row[3])}</span>'
+                    f'</div></div>')
+            return hdr + body + foot
 
         with tab1:
             rows = [
-                ("3.1(a)", "Outward taxable supplies", data["out_taxable"], data["out_cgst"], data["out_sgst"], data["out_igst"]),
-                ("3.1(b)", "Zero-rated supplies",      0, 0, 0, 0),
-                ("3.1(c)", "Nil / exempt supplies",    0, 0, 0, 0),
+                ("3.1(a)", "Outward taxable supplies (other than zero rated)", data["out_taxable"], data["out_cgst"], data["out_sgst"], 0),
+                ("3.1(b)", "Outward taxable supplies (zero rated)", 0, 0, 0),
+                ("3.1(c)", "Other outward supplies (nil rated, exempt)", 0, 0, 0),
             ]
-            st.markdown(tax_grid(
-                "Table 3.1 — Outward Supplies & Tax Liability", rows,
-                ("Total Output Tax", data["out_taxable"], data["out_cgst"], data["out_sgst"], data["out_igst"])
-            ), unsafe_allow_html=True)
+            st.markdown(tax_table("Table 3.1 — Details of Outward Supplies & Tax Liability", rows,
+                ("TOTAL OUTPUT TAX", data["out_taxable"], data["out_cgst"], data["out_sgst"]), "#FF6B6B"), unsafe_allow_html=True)
 
         with tab2:
             itc_rows = [
-                ("4(A)(1)", "ITC on Imports of goods",            0, 0, 0, 0),
-                ("4(A)(2)", "ITC on Imports of services",         0, 0, 0, 0),
-                ("4(A)(5)", "All other ITC (domestic purchases)", data["itc_taxable"], data["itc_cgst"], data["itc_sgst"], data["itc_igst"]),
+                ("4(A)(1)", "ITC on Imports of goods",              0, 0, 0),
+                ("4(A)(2)", "ITC on Imports of services",           0, 0, 0),
+                ("4(A)(5)", "All other ITC (domestic purchases)",   data["itc_taxable"], data["itc_cgst"], data["itc_sgst"]),
             ]
-            st.markdown(tax_grid(
-                "Table 4 — Eligible Input Tax Credit (ITC)", itc_rows,
-                ("Total ITC Available", data["itc_taxable"], data["itc_cgst"], data["itc_sgst"], data["itc_igst"])
-            ), unsafe_allow_html=True)
+            st.markdown(tax_table("Table 4 — Eligible Input Tax Credit (ITC)", itc_rows,
+                ("TOTAL ITC AVAILABLE", data["itc_taxable"], data["itc_cgst"], data["itc_sgst"]), "#00E5A0"), unsafe_allow_html=True)
 
         with tab3:
-            nc = "var(--red)" if data["net_cgst"]  > 0 else "var(--green)"
-            ns = "var(--red)" if data["net_sgst"]  > 0 else "var(--green)"
-            ni = "var(--red)" if data["net_igst"]  > 0 else "var(--green)"
-            nt = "var(--red)" if data["net_total"] > 0 else "var(--green)"
+            nc = "#FF6B6B" if data["net_cgst"]  > 0 else "#00E5A0"
+            ns = "#FF6B6B" if data["net_sgst"]  > 0 else "#00E5A0"
+            nt = "#FF6B6B" if data["net_total"] > 0 else "#00E5A0"
             st.markdown(f"""
-            <div style="font-weight:600; font-size:0.9rem; margin-bottom:0.75rem; color:var(--text);">
+            <div style="font-size:0.9rem;font-family:Syne,sans-serif;font-weight:700;color:var(--text);margin-bottom:0.75rem;">
                 Table 6.1 — Payment of Tax (Net Liability)
             </div>
-            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr;
-                padding:0.5rem 0.75rem; background:var(--surface2); border-radius:6px 6px 0 0;
-                border:1px solid var(--border); border-bottom:none;
-                font-family:'IBM Plex Mono',monospace; font-size:0.65rem;
-                color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;">
-                <span>Description</span><span>CGST</span><span>SGST</span><span>IGST</span><span>Total</span>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;">
+                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;background:var(--surface2);
+                    padding:0.75rem 1rem;font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);
+                    text-transform:uppercase;letter-spacing:0.08em;">
+                    <span>Description</span><span>CGST</span><span>SGST</span><span>Total</span>
+                </div>
+                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:0.75rem 1rem;border-top:1px solid var(--border);">
+                    <span>Output Tax Liability</span>
+                    <span style="color:#FF6B6B;">{fmt_inr(data['out_cgst'])}</span>
+                    <span style="color:#FF6B6B;">{fmt_inr(data['out_sgst'])}</span>
+                    <span style="color:#FF6B6B;">{fmt_inr(data['out_cgst']+data['out_sgst'])}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:0.75rem 1rem;border-top:1px solid var(--border);">
+                    <span>Less: ITC Available</span>
+                    <span style="color:#00E5A0;">(−) {fmt_inr(data['itc_cgst'])}</span>
+                    <span style="color:#00E5A0;">(−) {fmt_inr(data['itc_sgst'])}</span>
+                    <span style="color:#00E5A0;">(−) {fmt_inr(data['itc_cgst']+data['itc_sgst'])}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:1rem;
+                    border-top:2px solid var(--border);background:var(--surface2);font-weight:700;font-size:1rem;">
+                    <span style="font-family:'Syne',sans-serif;font-weight:800;">NET TAX PAYABLE</span>
+                    <span style="color:{nc};font-size:1.1rem;">{fmt_inr(data['net_cgst'])}</span>
+                    <span style="color:{ns};font-size:1.1rem;">{fmt_inr(data['net_sgst'])}</span>
+                    <span style="color:{nt};font-size:1.2rem;font-weight:800;">{fmt_inr(data['net_total'])}</span>
+                </div>
             </div>
-            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr;
-                padding:0.5rem 0.75rem; border:1px solid var(--border); border-top:none; font-size:0.84rem;">
-                <span>Output Tax Liability</span>
-                <span style="color:var(--red); font-family:'IBM Plex Mono',monospace;">{fmt_inr(data['out_cgst'])}</span>
-                <span style="color:var(--red); font-family:'IBM Plex Mono',monospace;">{fmt_inr(data['out_sgst'])}</span>
-                <span style="color:var(--red); font-family:'IBM Plex Mono',monospace;">{fmt_inr(data['out_igst'])}</span>
-                <span style="color:var(--red); font-family:'IBM Plex Mono',monospace;">{fmt_inr(data['out_cgst']+data['out_sgst']+data['out_igst'])}</span>
-            </div>
-            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr;
-                padding:0.5rem 0.75rem; border:1px solid var(--border); border-top:none; font-size:0.84rem;">
-                <span>Less: ITC Available</span>
-                <span style="color:var(--green); font-family:'IBM Plex Mono',monospace;">(−) {fmt_inr(data['itc_cgst'])}</span>
-                <span style="color:var(--green); font-family:'IBM Plex Mono',monospace;">(−) {fmt_inr(data['itc_sgst'])}</span>
-                <span style="color:var(--green); font-family:'IBM Plex Mono',monospace;">(−) {fmt_inr(data['itc_igst'])}</span>
-                <span style="color:var(--green); font-family:'IBM Plex Mono',monospace;">(−) {fmt_inr(data['itc_cgst']+data['itc_sgst']+data['itc_igst'])}</span>
-            </div>
-            <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr;
-                padding:0.7rem 0.75rem; background:var(--surface2); font-weight:700;
-                border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; font-size:0.9rem;
-                margin-bottom:1rem;">
-                <span>NET TAX PAYABLE</span>
-                <span style="color:{nc}; font-family:'IBM Plex Mono',monospace;">{fmt_inr(data['net_cgst'])}</span>
-                <span style="color:{ns}; font-family:'IBM Plex Mono',monospace;">{fmt_inr(data['net_sgst'])}</span>
-                <span style="color:{ni}; font-family:'IBM Plex Mono',monospace;">{fmt_inr(data['net_igst'])}</span>
-                <span style="color:{nt}; font-family:'IBM Plex Mono',monospace; font-size:1rem;">{fmt_inr(data['net_total'])}</span>
+            <div style="background:{'rgba(255,107,107,0.08)' if data['net_total']>0 else 'rgba(0,229,160,0.08)'};
+                border:1px solid {'rgba(255,107,107,0.3)' if data['net_total']>0 else 'rgba(0,229,160,0.3)'};
+                border-radius:10px;padding:1.25rem 1.5rem;">
+                <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:{nt};margin-bottom:0.4rem;">
+                    {'⚠️ You owe ₹' + f"{data['net_total']:,.2f}" + ' in GST'
+                     if data['net_total']>0
+                     else '✅ Excess ITC of ₹' + f"{abs(data['net_total']):,.2f}" + ' — carry forward'}
+                </div>
+                <div style="font-size:0.82rem;color:var(--muted);">
+                    Pay via GSTN portal under Electronic Cash Ledger by 20th of following month.
+                    Delay attracts 18% p.a. interest + ₹50/day late fee.
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
-            if data['net_total'] > 0:
-                st.warning(f"{T('You owe ')}₹{data['net_total']:,.2f}{T(' in GST. Pay via GSTN portal by 20th of next month. Late payment: 18% p.a. + ₹50/day.')}")
-            else:
-                st.success(f"{T('Excess ITC of ')}₹{abs(data['net_total']):,.2f}{T(' — carry forward to next period.')}")
-
+        st.markdown("<br>", unsafe_allow_html=True)
         gstr3b_export = pd.DataFrame([
-            {"Section":"3.1(a)", "Description":"Outward Taxable Supplies",  "Taxable":data['out_taxable'], "CGST":data['out_cgst'], "SGST":data['out_sgst'], "IGST":data['out_igst']},
-            {"Section":"4(A)(5)","Description":"ITC on Domestic Purchases", "Taxable":data['itc_taxable'], "CGST":data['itc_cgst'], "SGST":data['itc_sgst'], "IGST":data['itc_igst']},
-            {"Section":"6.1",    "Description":T("Net Tax Payable"),           "Taxable":data['out_taxable']-data['itc_taxable'], "CGST":data['net_cgst'], "SGST":data['net_sgst'], "IGST":data['net_igst']},
+            {"Section":"3.1(a)", "Description":"Outward Taxable Supplies",  "Taxable":data['out_taxable'], "CGST":data['out_cgst'], "SGST":data['out_sgst'], },
+            {"Section":"4(A)(5)","Description":"ITC on Domestic Purchases", "Taxable":data['itc_taxable'], "CGST":data['itc_cgst'], "SGST":data['itc_sgst'], },
+            {"Section":"6.1",    "Description":"Net Tax Payable",           "Taxable":data['out_taxable']-data['itc_taxable'], "CGST":data['net_cgst'], "SGST":data['net_sgst'], },
         ])
-        st.download_button(T("Download GSTR-3B CSV"),
+        st.download_button("⬇️ Download GSTR-3B Summary CSV",
             data=gstr3b_export.to_csv(index=False).encode(),
             file_name=f"GSTR3B_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv", use_container_width=True)
@@ -1434,24 +1608,26 @@ elif page == "GSTR-3B Report":
 # ════════════════════════════════════════════════
 elif page == "GSTR-2A / 2B":
     hamburger_btn()
-    st.markdown(f'<div class="page-title">{T("GSTR-2A / 2B — Inward Supplies ITC Statement")}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="page-sub">{T("Auto-populated from your suppliers' GSTR-1 filings.")}</div>', unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-    col1.markdown("""
-    <div class="info-box">
-        <div style="font-weight:600; color:var(--blue); margin-bottom:0.3rem;">{T("GSTR-2A — Dynamic")}</div>
-        <div style="font-size:0.82rem; color:var(--muted);">{T("Auto-populated in real-time as suppliers file GSTR-1. Changes when suppliers amend or file late.")}</div>
-    </div>""", unsafe_allow_html=True)
-    col2.markdown("""
-    <div class="info-box">
-        <div style="font-weight:600; color:var(--purple); margin-bottom:0.3rem;">{T("GSTR-2B — Static / Locked")}</div>
-        <div style="font-size:0.82rem; color:var(--muted);">{T("Locked snapshot of ITC available for a specific return period. Use this to claim ITC in GSTR-3B.")}</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown('<div class="finflow-logo" style="font-size:1.6rem;margin-bottom:0.2rem;">GSTR-2A / 2B</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.25rem;">
+        <b style="color:var(--accent);">Inward Supplies ITC Statement</b> — Auto-populated from your suppliers' GSTR-1 filings
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+        <div style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:1rem;">
+            <div style="font-family:'Syne',sans-serif;font-weight:700;color:#00E5A0;margin-bottom:0.4rem;">📡 GSTR-2A — Dynamic</div>
+            <div style="font-size:0.82rem;color:var(--muted);">Auto-populated in real-time as suppliers file GSTR-1. Changes when suppliers amend or file late.</div>
+        </div>
+        <div style="background:rgba(123,97,255,0.06);border:1px solid rgba(123,97,255,0.2);border-radius:10px;padding:1rem;">
+            <div style="font-family:'Syne',sans-serif;font-weight:700;color:#a89cff;margin-bottom:0.4rem;">🔒 GSTR-2B — Static / Locked</div>
+            <div style="font-size:0.82rem;color:var(--muted);">Locked snapshot of ITC available for a specific return period. Use this to claim ITC in GSTR-3B.</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
     p_df = st.session_state.purchase_register
-    tab1, tab2, tab3, tab4 = st.tabs([T("GSTR-2A Data"), T("GSTR-2B (Static)"), "Reconciliation", T("Add 2A Entry")])
+    tab1, tab2, tab3, tab4 = st.tabs([T("GSTR-2A Data"), T("GSTR-2B (Static)"), T("Reconciliation"), T("Add 2A Entry")])
 
     with tab4:
         st.caption(T("Simulate supplier-filed entries (in production this pulls from GSTN API)."))
@@ -1466,34 +1642,33 @@ elif page == "GSTR-2A / 2B":
                 s_taxable = st.number_input(T("Taxable Value (₹)"), min_value=0.0, value=1000.0, step=1.0)
                 s_cgst    = st.number_input(T("CGST (₹)"), min_value=0.0, value=90.0, step=0.01)
                 s_sgst    = st.number_input(T("SGST (₹)"), min_value=0.0, value=90.0, step=0.01)
-                s_igst    = st.number_input(T("IGST (₹)"), min_value=0.0, value=0.0, step=0.01)
-            s_total = s_taxable + s_cgst + s_sgst + s_igst
+            s_total = s_taxable + s_cgst + s_sgst
             st.markdown(f"**Total: {fmt_inr(s_total)}**")
             if st.form_submit_button(T("Add to GSTR-2A"), use_container_width=True):
                 new_row = {"GSTIN":s_gstin,"Vendor":s_vendor,"InvoiceNo":s_inv_no,
                            "Date":s_date.strftime("%d-%m-%Y"),"Taxable":s_taxable,
-                           "CGST":s_cgst,"SGST":s_sgst,"IGST":s_igst,"Total":s_total,
+                           "CGST":s_cgst,"SGST":s_sgst,"IGST":0,"Total":s_total,
                            "Source":"GSTR-2A (Supplier Filed)"}
                 st.session_state.gstr2a_data = pd.concat(
                     [st.session_state.gstr2a_data, pd.DataFrame([new_row])], ignore_index=True)
-                st.success(f"{s_vendor} {T('added to GSTR-2A.')}") 
+                st.success(f"{s_vendor} {T('added to GSTR-2A.')}")
                 st.rerun()
 
     gstr2a_df, gstr2b_df, recon_df = build_gstr2a_2b(p_df, st.session_state.gstr2a_data)
 
     with tab1:
         if st.session_state.gstr2a_data.empty:
-            st.info('No GSTR-2A entries. Go to T("Add 2A Entry") tab to simulate supplier data.')
+            st.info(T("No GSTR-2A entries. Go to Add 2A Entry tab to simulate supplier data."))
         else:
             total_itc = (st.session_state.gstr2a_data["CGST"].astype(float).sum()
                         + st.session_state.gstr2a_data["SGST"].astype(float).sum()
-                        + st.session_state.gstr2a_data["IGST"].astype(float).sum())
+                )
             k1, k2, k3 = st.columns(3)
             k1.metric(T("Suppliers Filed"),     st.session_state.gstr2a_data['GSTIN'].nunique())
             k2.metric(T("Total Invoices (2A)"), len(st.session_state.gstr2a_data))
             k3.metric(T("ITC Available (2A)"),  fmt_inr(total_itc))
             disp = st.session_state.gstr2a_data.copy()
-            for c in ["Taxable","CGST","SGST","IGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
+            for c in ["Taxable","CGST","SGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
             st.dataframe(disp, use_container_width=True, hide_index=True)
             st.download_button(T("Download GSTR-2A CSV"),
                 data=st.session_state.gstr2a_data.to_csv(index=False).encode(),
@@ -1501,13 +1676,13 @@ elif page == "GSTR-2A / 2B":
 
     with tab2:
         if gstr2b_df.empty:
-            st.info('GSTR-2B is generated after 2A data is available. Add entries in T("Add 2A Entry") first.')
+            st.info(T("GSTR-2B is generated after 2A data is available. Add entries in Add 2A Entry first."))
         else:
             itc_total = (gstr2b_df["CGST"].astype(float).sum() + gstr2b_df["SGST"].astype(float).sum()
-                        + gstr2b_df["IGST"].astype(float).sum())
+)
             st.info(f"{T('GSTR-2B snapshot — Locked ITC claimable in GSTR-3B: ')}{fmt_inr(itc_total)}")
             disp = gstr2b_df.copy()
-            for c in ["Taxable","CGST","SGST","IGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
+            for c in ["Taxable","CGST","SGST","Total"]: disp[c] = disp[c].apply(fmt_inr)
             st.dataframe(disp, use_container_width=True, hide_index=True)
             st.download_button(T("Download GSTR-2B CSV"),
                 data=gstr2b_df.to_csv(index=False).encode(),
@@ -1529,14 +1704,14 @@ elif page == "GSTR-2A / 2B":
             k3.metric(T("Mismatch"),       mismatch)
             k4.metric(T("Not in 2A"),      not_in_2a)
             disp = recon_df.copy()
-            for c in ["Your CGST","Your IGST","2A CGST","2A IGST"]: disp[c] = disp[c].apply(fmt_inr)
+            for c in ["Your CGST","2A CGST"]: disp[c] = disp[c].apply(fmt_inr)
             st.dataframe(disp, use_container_width=True, hide_index=True)
-            st.markdown("""
+            st.markdown(f"""
             <div class="info-box" style="margin-top:0.75rem; font-size:0.82rem; line-height:1.8; color:var(--muted);">
                 <b style="color:var(--text);">{T("Action Guide")}</b><br>
-                <b style="color:var(--green);">{T("Matched")}</b> — {T("Claim ITC in GSTR-3B Table 4.")}<br>
-                <b style="color:var(--red);">{T("Amount Mismatch")}</b> — {T("Contact supplier to amend GSTR-1, or reverse ITC.")}<br>
-                <b style="color:var(--amber);">{T("Not in 2A")}</b> — {T("Supplier hasn't filed. Follow up before claiming ITC.")}
+                <b style="color:var(--green);">✅ {T("Matched")}</b> — {T("Claim ITC in GSTR-3B Table 4.")}<br>
+                <b style="color:var(--red);">❌ {T("Amount Mismatch")}</b> — {T("Contact supplier to amend GSTR-1, or reverse ITC.")}<br>
+                <b style="color:var(--amber);">⚠️ {T("Not in 2A")}</b> — {T("Supplier hasn't filed. Follow up before claiming ITC.")}
             </div>""", unsafe_allow_html=True)
             st.download_button(T("Download Reconciliation CSV"),
                 data=recon_df.to_csv(index=False).encode(),
@@ -1657,5 +1832,5 @@ elif page == "User Guide":
     ]
     faqs = faqs_kn if is_kn else faqs_en
     for q, a in faqs:
-        with st.expander(q):
-            st.markdown(f'<div style="color:var(--muted); font-size:0.86rem; line-height:1.7;">{a}</div>', unsafe_allow_html=True)
+        with st.expander(f"❓ {q}"):
+            st.markdown(f'<div style="color:var(--muted);font-size:0.88rem;line-height:1.7;padding:0.25rem 0;">{a}</div>', unsafe_allow_html=True)
