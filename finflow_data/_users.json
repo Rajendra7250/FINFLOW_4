@@ -1,0 +1,17 @@
+{
+  "admin": {
+    "password": "Admin@123",
+    "name": "Admin User",
+    "color": "#00E5A0"
+  },
+  "admin7": {
+    "password": "Raj7250#",
+    "name": "admin lala",
+    "color": "#00E5A0"
+  },
+  "admin5": {
+    "password": "Abc@123",
+    "name": "rajendra",
+    "color": "#00E5A0"
+  }
+}

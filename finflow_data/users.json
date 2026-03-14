@@ -1,0 +1,12 @@
+{
+  "admin": {
+    "password": "Admin@123",
+    "name": "Admin User",
+    "color": "#00E5A0"
+  },
+  "admin7": {
+    "password": "Raj72#",
+    "name": "admin lala",
+    "color": "#00E5A0"
+  }
+}
