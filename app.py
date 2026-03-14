@@ -900,19 +900,30 @@ def get_my_identity():
     return gstin,name,aliases
 
 def parse_invoice_text(text):
-    lines=[l.strip() for l in text.splitlines() if l.strip()]
-    full=" ".join(lines); fl=full.lower()
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    full  = " ".join(lines)
+    fl    = full.lower()
 
-    def fa(pats):
+    # ── Table-header skip patterns (never pick these as vendor) ──────────
+    TABLE_HEADER_RE = re.compile(
+        r'(description|hsn|sac|qty|rate|amount|sl\.?\s*no|item|particulars)',
+        re.IGNORECASE
+    )
+
+    def fa(pats, src=full):
         for p in pats:
-            m=re.search(p,full,re.IGNORECASE)
+            m = re.search(p, src, re.IGNORECASE)
             if m:
-                try: return float(m.group(1).replace(",","").replace(" ",""))
-                except: pass
+                try:
+                    return float(m.group(1).replace(",", "").replace(" ", ""))
+                except:
+                    pass
         return 0.
 
     GSTIN_STRICT = re.compile(r'\b\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9][Z][A-Z0-9]\b')
-    GSTIN_LOOSE  = re.compile(r'\b(\d{2})\s*([A-Za-z]{5})\s*(\d{4})\s*([A-Za-z])\s*([A-Za-z0-9])\s*([Zz])\s*([A-Za-z0-9])\b')
+    GSTIN_LOOSE  = re.compile(
+        r'\b(\d{2})\s*([A-Za-z]{5})\s*(\d{4})\s*([A-Za-z])\s*([A-Za-z0-9])\s*([Zz])\s*([A-Za-z0-9])\b'
+    )
 
     def extract_gstins_from_text(txt):
         found = []
@@ -926,84 +937,154 @@ def parse_invoice_text(text):
         return list(dict.fromkeys(found))
 
     all_g = extract_gstins_from_text(full)
-    bi=next((i for i,l in enumerate(lines) if re.search(r'bill\s*to',l,re.IGNORECASE)),None)
-    my_g,my_n,MY_A=get_my_identity()
+    bi    = next((i for i, l in enumerate(lines)
+                  if re.search(r'bill\s*to', l, re.IGNORECASE)), None)
+    my_g, my_n, MY_A = get_my_identity()
 
-    def has_me(ll): b=" ".join(ll).lower(); return my_g.lower() in b or any(a in b for a in MY_A)
-    if bi is not None: sl=lines[:bi]; bl=lines[bi+1:bi+10]
-    else: mid=len(lines)//2; sl=lines[:mid]; bl=lines[mid:]
-    iam_s=has_me(sl); iam_b=has_me(bl)
+    def has_me(ll):
+        b = " ".join(ll).lower()
+        return my_g.lower() in b or any(a in b for a in MY_A)
 
-    if iam_s and not iam_b: dt="Sales Invoice"
-    elif iam_b and not iam_s: dt="Purchase Invoice"
-    elif re.search(r'sales\s*invoice',full,re.IGNORECASE): dt="Sales Invoice"
-    elif re.search(r'purchase\s*invoice',full,re.IGNORECASE): dt="Purchase Invoice"
-    elif re.search(r'credit\s*note',full,re.IGNORECASE): dt="Credit Note"
-    elif re.search(r'debit\s*note',full,re.IGNORECASE): dt="Debit Note"
-    else: top=" ".join(lines[:len(lines)//2]).upper(); dt="Sales Invoice" if my_g in top else "Purchase Invoice"
+    if bi is not None:
+        sl = lines[:bi]; bl = lines[bi+1:bi+10]
+    else:
+        mid = len(lines) // 2; sl = lines[:mid]; bl = lines[mid:]
 
-    mc=get_setting("my_city","").lower(); ms=get_setting("my_state","").lower()
-    sp=[r'\d{2}[A-Za-z]{5}\d{4}',r'phone|email|gstin|gst\s*no|billing|authorised|mobile|fax',
-        r'@',r'^[\d\s\-\+]+$',r'^\d+$',
+    iam_s = has_me(sl); iam_b = has_me(bl)
+
+    if iam_s and not iam_b:                                     dt = "Sales Invoice"
+    elif iam_b and not iam_s:                                   dt = "Purchase Invoice"
+    elif re.search(r'sales\s*invoice', full, re.IGNORECASE):    dt = "Sales Invoice"
+    elif re.search(r'purchase\s*invoice', full, re.IGNORECASE): dt = "Purchase Invoice"
+    elif re.search(r'credit\s*note', full, re.IGNORECASE):      dt = "Credit Note"
+    elif re.search(r'debit\s*note', full, re.IGNORECASE):       dt = "Debit Note"
+    else:
+        top = " ".join(lines[:len(lines)//2]).upper()
+        dt  = "Sales Invoice" if my_g in top else "Purchase Invoice"
+
+    mc = get_setting("my_city",  "").lower()
+    ms = get_setting("my_state", "").lower()
+    sp = [
+        r'\d{2}[A-Za-z]{5}\d{4}',
+        r'phone|email|gstin|gst\s*no|billing|authorised|mobile|fax',
+        r'@', r'^[\d\s\-\+]+$', r'^\d+$',
         r'tax invoice|purchase invoice|sales invoice|invoice no|bill to|ship to|due date',
-        r'^(to|from|dear|the|a|an)$']
+        r'^(to|from|dear|the|a|an)$',
+        # ── NEW: skip table-header lines ──────────────────────────
+        r'description|hsn|sac|qty|rate|amount|sl\.?\s*no|item|particulars',
+    ]
     if mc: sp.append(re.escape(mc))
     if ms: sp.append(re.escape(ms))
     for a in MY_A:
-        if len(a)>3: sp.append(re.escape(a))
+        if len(a) > 3: sp.append(re.escape(a))
 
     def fc(ll):
         for ln in ll:
-            lc=re.sub(r'[|/*]','',ln).strip()
-            if len(lc)<4 or my_g in lc.upper(): continue
-            if any(a in lc.lower() for a in MY_A): continue
-            if any(re.search(p,lc,re.IGNORECASE) for p in sp): continue
-            if any(c.isalpha() for c in lc): return lc
+            lc = re.sub(r'[|/*]', '', ln).strip()
+            if len(lc) < 4 or my_g in lc.upper():      continue
+            if any(a in lc.lower() for a in MY_A):      continue
+            if any(re.search(p, lc, re.IGNORECASE) for p in sp): continue
+            if any(c.isalpha() for c in lc):            return lc
         return "Unknown"
 
-    other=fc(bl if dt=="Sales Invoice" else sl)
-    vendor=other if other!="Unknown" else fc(lines)
+    other  = fc(bl if dt == "Sales Invoice" else sl)
+    vendor = other if other != "Unknown" else fc(lines)
 
-    gstin=""
+    gstin = ""
     for g in all_g:
-        if g != my_g: gstin=g; break
-    if not gstin and all_g: gstin=all_g[0]
+        if g != my_g: gstin = g; break
+    if not gstin and all_g: gstin = all_g[0]
 
-    dm=re.search(r'(?:invoice\s*date|date)[:\s]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',full,re.IGNORECASE)
-    if not dm: dm=re.search(r'(\d{2}[-/]\d{2}[-/]\d{4})',full)
-    ds=dm.group(1).replace("/","-") if dm else date.today().strftime("%d-%m-%Y")
+    dm = re.search(
+        r'(?:invoice\s*date|date)[:\s]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
+        full, re.IGNORECASE
+    )
+    if not dm: dm = re.search(r'(\d{2}[-/]\d{2}[-/]\d{4})', full)
+    ds = dm.group(1).replace("/", "-") if dm else date.today().strftime("%d-%m-%Y")
 
-    total=fa([r'(?:total\s*amount\s*payable|grand\s*total|total\s*amount)[:\sRs.\u20b9]*([0-9,]+\.?\d*)',
-              r'total\s*payable[:\sRs.\u20b9]*([0-9,]+\.?\d*)',
-              r'(?:amount\s*due|net\s*payable)[:\sRs.\u20b9]*([0-9,]+\.?\d*)'])
-    if total==0.: total=max([float(x) for x in re.findall(r'\b\d{1,7}\.\d{2}\b',full)],default=0.)
+    total = fa([
+        r'(?:total\s*amount\s*payable|grand\s*total|total\s*amount)[:\sRs.\u20b9]*([0-9,]+\.?\d*)',
+        r'total\s*payable[:\sRs.\u20b9]*([0-9,]+\.?\d*)',
+        r'(?:amount\s*due|net\s*payable)[:\sRs.\u20b9]*([0-9,]+\.?\d*)',
+    ])
+    if total == 0.:
+        total = max(
+            [float(x) for x in re.findall(r'\b\d{1,7}\.\d{2}\b', full)],
+            default=0.
+        )
 
-    sub=fa([r'(?:taxable\s*value|subtotal|taxable\s*amount)[:\sRs.\u20b9]*([0-9,]+\.?\d*)'])
-    hc=bool(re.search(r'\bCGST\b',full,re.IGNORECASE))
-    hs=bool(re.search(r'\bSGST\b',full,re.IGNORECASE))
-    hi=bool(re.search(r'\bIGST\b',full,re.IGNORECASE))
+    sub = fa([
+        r'(?:taxable\s*value|subtotal|taxable\s*amount)[:\sRs.\u20b9]*([0-9,]+\.?\d*)'
+    ])
 
-    cgst=fa([r'CGST\s*@\s*\d+\.?\d*\s*%\s*(?:Rs\.?|INR|\u20b9)?\s*([0-9,]{2,}\.?\d*)',
-             r'CGST\s*[:\-]?\s*(?:Rs\.?|INR|\u20b9)?\s*([0-9,]{2,}\.?\d*)']) if hc else 0.
-    sgst=fa([r'SGST\s*@\s*\d+\.?\d*\s*%\s*(?:Rs\.?|INR|\u20b9)?\s*([0-9,]{2,}\.?\d*)',
-             r'SGST\s*[:\-]?\s*(?:Rs\.?|INR|\u20b9)?\s*([0-9,]{2,}\.?\d*)']) if hs else 0.
-    igst=fa([r'IGST\s*@\s*\d+\.?\d*\s*%\s*(?:Rs\.?|INR|\u20b9)?\s*([0-9,]{2,}\.?\d*)',
-             r'IGST\s*[:\-]?\s*(?:Rs\.?|INR|\u20b9)?\s*([0-9,]{2,}\.?\d*)']) if hi else 0.
+    # ── Detect which tax types are present ────────────────────────────────
+    hc = bool(re.search(r'\bCGST\b', full, re.IGNORECASE))
+    hs = bool(re.search(r'\bSGST\b', full, re.IGNORECASE))
+    hi = bool(re.search(r'\bIGST\b', full, re.IGNORECASE))
 
-    tax=cgst+sgst+igst
-    sub=round(total-tax,2) if tax>0 else round(total,2)
-    if cgst==0. and sgst==0. and igst==0. and total>0 and sub>0: tax=round(total-sub,2)
-    if tax>0:
-        if not hi and (hc or hs): cgst=sgst=round(tax/2,2)
-        elif hi and not hc and not hs: igst=tax
+    # ── IMPROVED tax extraction — handles both "CGST @ 9% 4116.00"
+    #    and table-column formats like "CGST\n9%\n4116.00" ────────────────
+    def extract_tax(keyword, src=full):
+        patterns = [
+            # "CGST @ 9% 4,116.00" or "CGST @ 9% Rs. 4116"
+            rf'{keyword}\s*@\s*\d+\.?\d*\s*%\s*(?:Rs\.?|INR|₹)?\s*([0-9,]{{2,}}\.?\d*)',
+            # "CGST: 4,116.00"
+            rf'{keyword}\s*[:\-]\s*(?:Rs\.?|INR|₹)?\s*([0-9,]{{2,}}\.?\d*)',
+            # "CGST  4116.00" (space-separated, common in table PDFs)
+            rf'{keyword}\s+(?:Rs\.?|INR|₹)?\s*([0-9,]{{2,}}\.?\d*)',
+            # Look for the number that appears right after CGST% line
+            # e.g. multiline: "CGST\n9%\n4116.00"
+            rf'{keyword}[^\n]*\n[^\n]*%[^\n]*\n\s*(?:Rs\.?|INR|₹)?\s*([0-9,]{{2,}}\.?\d*)',
+        ]
+        return fa(patterns, src)
 
-    found=sum([bool(vendor and vendor!="Unknown"),bool(gstin),total>0,sub>0,
-               cgst>0 or sgst>0 or igst>0,iam_s or iam_b])
-    return {"vendor":vendor,"date":ds,"gstin":gstin,"doc_type":dt,
-            "subtotal":sub,"cgst":cgst,"sgst":sgst,"igst":igst,"total":total,
-            "confidence":min(50+found*8,97),
-            "detected_by":"GSTIN Match" if (iam_s or iam_b) else "Keyword",
-            "has_cgst":hc,"has_sgst":hs,"has_igst":hi}
+    cgst = extract_tax('CGST') if hc else 0.
+    sgst = extract_tax('SGST') if hs else 0.
+    igst = extract_tax('IGST') if hi else 0.
+
+    # ── If word found but amount still 0, try to derive from total/sub ────
+    tax = cgst + sgst + igst
+
+    # Back-calculate: if we know total and sub but got no tax
+    if tax == 0. and total > 0 and sub > 0:
+        derived_tax = round(total - sub, 2)
+        if derived_tax > 0:
+            if hc and hs and not hi:
+                cgst = sgst = round(derived_tax / 2, 2)
+            elif hi and not hc and not hs:
+                igst = derived_tax
+            elif hc and not hs and not hi:
+                cgst = derived_tax
+            tax = cgst + sgst + igst
+
+    # If sub is still 0, derive it
+    sub = round(total - tax, 2) if tax > 0 and sub == 0. else sub
+    if sub == 0. and total > 0.:
+        sub = round(total, 2)
+
+    # Final sanity: if CGST word present but still 0, split evenly from tax
+    if hc and cgst == 0. and tax == 0. and total > 0 and sub > 0:
+        derived = round(total - sub, 2)
+        if derived > 0:
+            cgst = sgst = round(derived / 2, 2) if hs else derived
+            igst = derived if hi and not hc else igst
+        tax = cgst + sgst + igst
+
+    found = sum([
+        bool(vendor and vendor != "Unknown"),
+        bool(gstin), total > 0, sub > 0,
+        cgst > 0 or sgst > 0 or igst > 0,
+        iam_s or iam_b
+    ])
+
+    return {
+        "vendor": vendor, "date": ds, "gstin": gstin, "doc_type": dt,
+        "subtotal": sub, "cgst": cgst, "sgst": sgst, "igst": igst, "total": total,
+        "confidence": min(50 + found * 8, 97),
+        "detected_by": "GSTIN Match" if (iam_s or iam_b) else "Keyword",
+        "has_cgst": hc, "has_sgst": hs, "has_igst": hi,
+        "_raw_text": text,  # preserve for error detection
+    }
 
 # ─────────────────────────────────────────────
 # LOGIN PAGE
